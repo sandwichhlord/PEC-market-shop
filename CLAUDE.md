@@ -55,6 +55,7 @@ pin the previous major and log it in `docs/DECISIONS.md`.
 - `npm run verify` — **typecheck + lint + unit tests + `next build`**. Must pass at the end of every phase.
 - `npm run e2e` — Playwright against a fresh `pec_market_e2e` database with `PAYMENTS_PROVIDER=mock`
 - `npm run db:migrate` · `npm run db:seed` · `npm run db:reset`
+- On this Windows machine, run npm run verify and Vitest from PowerShell, not Git Bash (Vitest drive-letter casing bug).
 
 **Database safety:** never run `npm run db:reset`, `prisma migrate reset`, or `prisma db push --force-reset`, and
 never set `PRISMA_USER_CONSENT_FOR_DANGEROUS_AI_ACTION`. Resetting the dev DB is human-only. To get a clean
