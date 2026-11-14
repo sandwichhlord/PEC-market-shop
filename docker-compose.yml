@@ -1,0 +1,14 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: pec
+      POSTGRES_PASSWORD: pec
+      POSTGRES_DB: pec_market
+    ports:
+      - "5433:5432"
+    volumes:
+      - pec_market_pg:/var/lib/postgresql/data
+volumes:
+  pec_market_pg:
