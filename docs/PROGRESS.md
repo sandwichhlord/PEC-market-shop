@@ -71,3 +71,28 @@ warned banner dismiss, suspended user kicked out on next page load and blocked a
 when launched from Git Bash (drive-letter case mismatch loads two module copies); it works from PowerShell/cmd.
 Deferred by plan: shop search/ratings (P04), order tabs/badges (P07), live notification bell (P08), admin actions (P11),
 login rate limit (P12).
+
+## P04 — Customer browsing (2026-11-14)
+
+**Built:** Shops list (`/shops`) with debounced name search (`?q=`, case-insensitive, also a plain GET form), shop
+cards (logo, name, location, open/closed pill, average rating to 1 decimal + review count), open shops first. Shop
+menu page (`/shops/[shopId]`): header with logo/location/rating/description, closed-shop notice, dish cards (photo,
+name, description, price, prep time, out-of-stock pill) and a dish detail sheet (native `<dialog>`: bottom sheet on
+mobile, centred card from `sm`) with a quantity stepper. Out-of-stock dishes and dishes of closed shops are visible
+but their Add buttons are disabled. Cart core: pure rules in `src/lib/cart/cart.ts` (one shop at a time, no
+out-of-stock/closed adds, line cap 20) wrapped by a persisted zustand store (`src/lib/cart/store.ts`, manual
+hydration); adding from a second shop opens a "Start a new cart?" confirm; a fixed cart summary bar shows count,
+subtotal, shop and Clear. API: `GET /api/shops?q=` and `GET /api/shops/[shopId]` (guarded, zod-validated; shops of
+suspended owners and archived dishes hidden). `StatusBadge` with every SPEC §8 colour (pulsing dot for
+READY_FOR_PICKUP), now used on the orders list. UI kit additions: `Skeleton`, `ErrorState`, `Pill`, `Rating`, `Sheet`.
+Loading skeletons, error boundaries (retry), empty states (no shops / no search match / no dishes) and a shop
+not-found state.
+
+**Verified:** `npm run verify` passes (236 Vitest tests; new: cart rules, StatusBadge colour map vs SPEC, API tests for
+auth, ordering, search, over-long query, rating average/count, suspended-owner hiding, archived/out-of-stock menu
+items, 404s). `npm run e2e` passes (19 Playwright tests; new `e2e/browsing.spec.ts`: shops list + menu + dish sheet
+at 375px and 1280px with no horizontal overflow and every card inside the viewport, full-page screenshots attached
+to the report; out-of-stock cannot be added (card and sheet); quantity add + cart persists across reload; search;
+one-shop cart confirm (keep / clear and add); closed shop blocks adding; unknown shop not-found).
+
+**Deferred by plan:** cart page + checkout (P06), live stock updates via Socket.IO (P08), reviews list on shop page (P10).

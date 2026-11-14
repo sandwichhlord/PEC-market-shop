@@ -42,7 +42,7 @@ from the course brief so the git history maps onto the SDLC section of the repor
 
 ## Sprint 2 — Core Portals
 
-- [ ] **P04 — Customer browsing**
+- [x] **P04 — Customer browsing**
   - Shops list (search, rating, open/closed), shop menu page (photo, price, prep time, stock badge), dish detail sheet.
   - `StatusBadge` component with all colours from SPEC §8. Skeleton, empty and error states.
   - **Accept:** pages render seeded data at 375px and 1280px without layout breakage (Playwright screenshot test at both

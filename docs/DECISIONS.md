@@ -37,3 +37,12 @@ P03 — Vitest integration tests run against a disposable `pec_market_test_e2e` 
 P03 — Signup password policy 8–72 chars (bcrypt limit); login has no length rule because seed passwords (`shop123`) predate it. Phone optional, 7–15 digits, spaces/dashes stripped.
 P03 — Early customer pages (`/shops`, `/orders`, `/notifications`) render simple real data lists; P04/P07/P08 replace them with the full features (search/rating, tabs/badges, live bell).
 P03 — Vitest fails from Git Bash ("Cannot read properties of undefined (reading 'config')"): Git Bash starts Node with a lowercase drive (`e:\…`), so Vitest loads two copies of its runner. Tried pinning `root` in vitest.config.ts with an uppercase drive letter — no effect (module resolution follows `process.cwd()`), so it was reverted. Workaround: run `npm run verify` / Vitest from PowerShell (noted in CLAUDE.md → Commands).
+P04 — The cart rules + zustand store are built in P04 (not P06) so "out-of-stock dishes cannot be added" has a real add action to test; P06 adds the cart page, quantity editing UI and checkout. Until then the shop page shows a cart summary bar (count, subtotal, shop, Clear) without a "View cart" link.
+P04 — Closed shops: menu is browsable but Add is disabled (plus a notice); checkout re-validates in P06 anyway.
+P04 — Per-line quantity capped at 20 in the cart.
+P04 — Shops of suspended owners are hidden from browsing (list 404s the menu); archived dishes are never shown to customers.
+P04 — Average rating shown rounded to 1 decimal with review count; "No reviews yet" when none. Reviews list itself is P10.
+P04 — `GET /api/shops` and `GET /api/shops/[shopId]` need any signed-in user (pages are customer-only via the proxy); they exist for refetch-on-reconnect in P08 and for API tests.
+P04 — "Playwright screenshot test" = layout assertions (no horizontal scroll, every list item inside the viewport) at 375px and 1280px plus full-page screenshots attached to the HTML report — not pixel-diff baselines, which would break on every later UI phase and across machines.
+P04 — Status badge colours live in an exported `STATUS_BADGE_STYLE` map inside `StatusBadge.tsx` (single definition, unit-tested against SPEC §8).
+P04 — Dish detail is a native `<dialog>` (`Sheet` component) for built-in focus trap/Esc; bottom sheet on mobile, centred from `sm`.

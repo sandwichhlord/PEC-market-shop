@@ -2,9 +2,9 @@ import { ClipboardList } from "lucide-react";
 import type { Metadata } from "next";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { PageHeader } from "@/components/ui/PageHeader";
+import { StatusBadge } from "@/components/ui/StatusBadge";
 import { formatDateTime } from "@/lib/datetime";
 import { formatPaise } from "@/lib/money";
-import { ORDER_STATUS_LABEL } from "@/lib/order-status";
 import { requirePageUser } from "@/server/auth/current";
 import { listCustomerOrders } from "@/server/orders/history";
 
@@ -31,9 +31,9 @@ export default async function OrdersPage() {
                   {formatDateTime(order.createdAt)}
                 </p>
               </div>
-              <div className="shrink-0 text-right">
+              <div className="flex shrink-0 flex-col items-end">
                 <p className="font-semibold text-slate-900">{formatPaise(order.totalPaise)}</p>
-                <p className="text-xs text-slate-600">{ORDER_STATUS_LABEL[order.status]}</p>
+                <StatusBadge status={order.status} className="mt-1" />
               </div>
             </li>
           ))}
