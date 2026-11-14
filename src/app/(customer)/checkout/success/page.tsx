@@ -42,8 +42,8 @@ export default async function CheckoutSuccessPage({ searchParams }: Props) {
 
   const links = (
     <div className="flex flex-col gap-2 sm:flex-row sm:justify-center">
-      <Link href="/orders" className={buttonClasses("primary")}>
-        View your orders
+      <Link href={`/orders/${order.id}`} className={buttonClasses("primary")}>
+        Track your order
       </Link>
       <Link href="/shops" className={buttonClasses("secondary")}>
         Back to shops

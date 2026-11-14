@@ -8,6 +8,11 @@ Append one entry per phase (newest at the bottom).
   timeout ("Connection terminated due to connection timeout") and cold-server logins exceed Playwright's 5 s expect, so
   random specs (old and new) fail. Please re-run `npm run e2e` on an idle machine; every spec has passed in at least
   one run. `npm run verify` passes.
+- **Same symptom during P07 (2026-11-14):** another project's Docker stack (ledgerpay + Kafka + a testcontainers run)
+  was running on this machine. Vitest hit pg connection timeouts in untouched test files until that run ended, after
+  which `npm run verify` passed cleanly. Two `npm run e2e` runs: run 1 had 30/32 passing, run 2 had 18/32 passing, and
+  every failure was a login or signup redirect timing out (5 s) while the host was slow. Every spec passed in at least
+  one run, including all 4 new `e2e/orders.spec.ts` tests. Please re-run `npm run e2e` on an idle machine.
 
 ---
 
@@ -161,3 +166,31 @@ host load (see Blocked).
 
 **Deferred by plan:** customer order detail/timeline + Active/Past tabs (P07), live push (P08), `charge.refunded` and
 refund flows (P09).
+
+## P07 — Order lifecycle & history (2026-11-14)
+
+**Built:** `changeStatus` (single entry point: state machine → OrderEvent → Notifications → `emit()` hook) was already in
+place from P05; P07 builds the customer side on it. Pure tracking logic in `src/lib/order-tracking.ts`: Placed & paid →
+Preparing → Ready → Completed steps (done / current / upcoming, with times) derived from OrderEvents, and the
+estimated ready time (latest PREPARING event + longest dish prep time). History tabs `CUSTOMER_ORDER_TABS` (Active /
+Past covering every status once). `src/server/orders/history.ts`: tab lists + counts, order detail with steps + estimate.
+API: `GET /api/orders?tab=active|past` (customer only) and `GET /api/orders/[orderId]` (`requireOrderAccess`: own
+customer, the shop's owner for paid orders, admin; else 404). Pages: `/orders` with Active/Past tabs (counts, cards
+with shop logo, items, total, badge, time; empty states per tab), `/orders/[orderId]` (progress tracker, ready
+estimate, notices for pending/failed/disputed/refunded/resolved orders, items + totals + payment status, pickup
+location, full status history with who made each change), plus loading skeletons, error boundaries and a not-found
+state. The checkout success page now links to "Track your order".
+
+**Verified:** `npm run verify` passes (460 Vitest tests; 21 new): unit tests for tracking steps (unpaid, each kitchen
+status, disputes/refunds, resumed orders), ready estimate (before start, ETA, re-start, ready, none outside the
+kitchen) and tab coverage. API test `tests/api/customer-orders.test.ts`: the full lifecycle PLACED_PAID → PREPARING →
+READY_FOR_PICKUP → COMPLETED through the shop API gives exactly 3 OrderEvents and 3 customer notifications, with the
+customer's view (steps, ETA = start + 14 min, timeline) checked after every step and the order moving from Active to
+Past. Access tests: another customer → 404 (and the page query returns null); another shop → 404; own shop sees paid
+orders but not unpaid ones; admin 200; 401 / suspended 403 / unknown 404. Tab tests: split + order + counts, no
+strangers' orders, bad tab 400, shop owner and admin 403. New `e2e/orders.spec.ts` (tabs + order; failed-payment
+notice; detail tracker/estimate/timeline following the shop's ready → completed; another customer's order not found
+in the page or the API; 375px fit with a screenshot): all 4 passed. Full e2e was load-affected (see Blocked).
+
+**Deferred by plan:** live updates on the order page and toasts (P08 — `emit()` already sends to `order:`/`user:`
+rooms), refund / complaint actions (P09), review form (P10).

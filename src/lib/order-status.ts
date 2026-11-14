@@ -53,14 +53,16 @@ export function nextKitchenTarget(status: OrderStatus): KitchenTarget | null {
   return null;
 }
 
-/** Statuses an order is still "in progress" in (the customer's Active tab). */
-export const ACTIVE_ORDER_STATUSES = [
-  "PLACED_PAID",
-  "PREPARING",
-  "READY_FOR_PICKUP",
-  "REFUND_REQUESTED",
-  "COMPLAINT_FILED",
-] as const satisfies readonly OrderStatus[];
+/**
+ * The customer's order history tabs (SPEC §3). Active = still in progress (awaiting payment, in the kitchen, or a
+ * dispute waiting for an answer); Past = finished one way or another. Together they cover every status exactly once.
+ */
+export const CUSTOMER_ORDER_TABS = {
+  active: ["PENDING_PAYMENT", "PLACED_PAID", "PREPARING", "READY_FOR_PICKUP", "REFUND_REQUESTED", "COMPLAINT_FILED"],
+  past: ["COMPLETED", "REFUNDED", "RESOLVED", "PAYMENT_FAILED"],
+} as const satisfies Record<string, readonly OrderStatus[]>;
+export type CustomerOrderTab = keyof typeof CUSTOMER_ORDER_TABS;
+export const CUSTOMER_ORDER_TAB_NAMES = Object.keys(CUSTOMER_ORDER_TABS) as CustomerOrderTab[];
 
 export const PAYMENT_STATUS_LABEL: Record<PaymentStatus, string> = {
   PENDING: "Payment pending",

@@ -67,7 +67,7 @@ from the course brief so the git history maps onto the SDLC section of the repor
     calling `markOrderPaid` twice is a no-op; webhook rejects bad signature; Stripe provider unit-tested with the Stripe
     SDK mocked; `npm run verify` passes.
 
-- [ ] **P07 — Order lifecycle & history**
+- [x] **P07 — Order lifecycle & history**
   - `src/server/orders/changeStatus.ts`: single entry point — validates via state machine, writes `OrderEvent`,
     creates `Notification` rows, calls an `emit()` hook (no-op until P08).
   - Customer order detail page with status timeline from `OrderEvent`s and estimated ready time; order history with
