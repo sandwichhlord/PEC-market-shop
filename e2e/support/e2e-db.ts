@@ -74,13 +74,26 @@ function runPrisma(args: string, url: string): void {
   execSync(`npx prisma ${args}`, { stdio: "inherit", env: { ...process.env, DATABASE_URL: url } });
 }
 
-/** migrate deploy → truncate all app tables → seed. Guarded: only ever runs on a *_e2e database. */
-export async function prepareE2eDatabase(rawUrl: string | undefined): Promise<void> {
+/**
+ * migrate deploy → truncate all app tables → seed (unless `seed: false`, used by the Vitest integration suite, whose
+ * tests create their own fixtures). Guarded: only ever runs on a *_e2e database.
+ */
+export async function prepareE2eDatabase(rawUrl: string | undefined, { seed = true }: { seed?: boolean } = {}): Promise<void> {
   const url = assertE2eDatabaseUrl(rawUrl);
   console.log(`[e2e] preparing database "${databaseNameFromUrl(url)}"`);
   await ensureDatabaseExists(url);
   runPrisma("migrate deploy", url);
   const truncated = await truncateAppTables(url);
   console.log(`[e2e] truncated ${truncated.length} table(s)`);
-  runPrisma("db seed", url);
+  if (seed) runPrisma("db seed", url);
+}
+
+/** URL of the Vitest integration database: TEST_DATABASE_URL, else E2E_DATABASE_URL with the name pec_market_test_e2e. */
+export function testDatabaseUrl(env: NodeJS.ProcessEnv = process.env): string {
+  if (env.TEST_DATABASE_URL) return assertE2eDatabaseUrl(env.TEST_DATABASE_URL);
+  const base = env.E2E_DATABASE_URL ?? env.DATABASE_URL;
+  if (!base) throw new Error("Set TEST_DATABASE_URL (or E2E_DATABASE_URL) to run the integration tests.");
+  const url = new URL(base);
+  url.pathname = "/pec_market_test_e2e";
+  return assertE2eDatabaseUrl(url.toString());
 }

@@ -44,3 +44,30 @@ times (7 users, 4 shops, 34 dishes, 8 orders, 13 order items, 32 events, 29 noti
 1 report; second run "0 new orders"). Unit tests: every allowed (from, to, actor) — cross-checked against the table —
 plus 19 not-in-table and 15 wrong-actor cases, previous-status rules, seed-data consistency, SVG generator (84 tests
 total). `npm run verify` passes. `npm run e2e` passes (global setup migrate deploy + truncate + seed on `pec_market_e2e`).
+
+## P03 — Auth, roles, guards, storage (2026-11-14)
+
+**Built:** Email/password auth with bcryptjs + jose HS256 JWT in an httpOnly SameSite=Lax `pec_session` cookie.
+API: `POST /api/auth/signup` (customer), `POST /api/auth/shop-signup` (multipart, creates owner + Shop in one
+transaction, optional logo upload or generated SVG placeholder), `POST /api/auth/login` (portal-aware: `WRONG_PORTAL`
+with role + link, `ACCOUNT_SUSPENDED`), `POST|GET /api/auth/logout`, `GET /api/me`. Guards in
+`src/server/auth/guards.ts` (`requireUser`, `requireRole`, `requireShopOwner`, `requireOrderAccess`) with suspended
+users rejected and their cookie cleared; uniform JSON errors via `withErrors` (`src/server/http.ts`). `src/proxy.ts`
+(Next 16 name for middleware) redirects pages by role; portal layouts re-check the DB (suspended → logout → login
+with message). `StorageProvider` + `LocalStorageProvider` (magic-byte image sniffing, ≤5 MB, traversal-safe keys),
+`POST /api/uploads`, `GET /api/uploads/[...path]` (sandboxed). Pages: `/login`, `/signup`, `/shop/login`,
+`/shop/signup`, `/admin/login`, public landing `/`. Shells: customer (top bar + mobile bottom tabs Shops/Orders/
+Notifications/Account), shop + admin (sidebar, mobile drawer), dismissible warning banner, logout. Initial portal
+pages with real data: shops list, order list, notifications list, account, shop dashboard, admin counts.
+
+**Verified:** `npm run verify` passes (typecheck, lint, 216 Vitest tests incl. API-level integration tests against
+`pec_market_test_e2e`: signup/shop signup/duplicates/validation/logo rules, login for all three portals, wrong-portal
+×4, suspended login, warned login, `/api/me` with tampered/stale/suspended tokens, logout, every guard, proxy role
+gating (customer → /shop redirected etc.), uploads auth/type/size/traversal; `next build`). `npm run e2e` passes
+(12 Playwright tests: login/logout per portal, deep-link `next`, wrong-portal message, signups incl. logo upload,
+warned banner dismiss, suspended user kicked out on next page load and blocked at login, 375px bottom tabs).
+
+**Notes:** In this Windows environment Vitest fails with "Cannot read properties of undefined (reading 'config')"
+when launched from Git Bash (drive-letter case mismatch loads two module copies); it works from PowerShell/cmd.
+Deferred by plan: shop search/ratings (P04), order tabs/badges (P07), live notification bell (P08), admin actions (P11),
+login rate limit (P12).

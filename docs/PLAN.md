@@ -31,7 +31,7 @@ from the course brief so the git history maps onto the SDLC section of the repor
     `migrate deploy`, truncates and seeds `pec_market_e2e`); unit tests cover **every** allowed transition and at least
     10 disallowed ones (incl. wrong actor); `npm run verify` passes. Do **not** run `npm run db:reset` (human-only).
 
-- [ ] **P03 — Auth, roles, guards, storage**
+- [x] **P03 — Auth, roles, guards, storage**
   - Customer and shop-owner signup/login pages + admin login (SPEC §2). Shop signup also creates the Shop (logo upload).
   - JWT cookie, logout, `/api/me`. Middleware redirects by role; guards in `src/server/auth/guards.ts`.
   - Suspended → blocked everywhere; warned → banner.
