@@ -1,29 +1,18 @@
-// Runs Playwright against a freshly reset pec_market_e2e database with mock payments.
+// `npm run e2e`: production build, then Playwright. Database prep (migrate deploy → TRUNCATE → seed,
+// guarded to *_e2e databases) happens in e2e/global-setup.ts.
 import "dotenv/config";
 import { spawnSync } from "node:child_process";
+import { assertE2eDatabaseUrl } from "../e2e/support/e2e-db";
 
-const e2eUrl = process.env.E2E_DATABASE_URL;
-if (!e2eUrl) {
-  console.error("E2E_DATABASE_URL is not set (see .env.example).");
-  process.exit(1);
-}
+// Fail fast, before the slow build, if the URL is not a disposable *_e2e database.
+assertE2eDatabaseUrl(process.env.E2E_DATABASE_URL);
 
-const env: NodeJS.ProcessEnv = {
-  ...process.env,
-  DATABASE_URL: e2eUrl,
-  PAYMENTS_PROVIDER: "mock",
-  E2E_PORT: process.env.E2E_PORT ?? "3100",
-};
-env.APP_URL = `http://localhost:${env.E2E_PORT}`;
-
-function run(cmd: string, args: string[], extraEnv: Partial<NodeJS.ProcessEnv> = {}): void {
-  console.log(`\n$ ${cmd} ${args.join(" ")}`);
-  // One command string (not cmd + args) so the shell can resolve npx on Windows without DEP0190.
-  const result = spawnSync(`${cmd} ${args.join(" ")}`, { stdio: "inherit", shell: true, env: { ...env, ...extraEnv } });
+function run(command: string, extraEnv: Partial<NodeJS.ProcessEnv> = {}): void {
+  console.log(`\n$ ${command}`);
+  // One command string with shell: true so npx resolves on Windows (avoids Node's DEP0190 warning).
+  const result = spawnSync(command, { stdio: "inherit", shell: true, env: { ...process.env, ...extraEnv } });
   if (result.status !== 0) process.exit(result.status ?? 1);
 }
 
-run("npx", ["prisma", "migrate", "reset", "--force"]);
-run("npx", ["prisma", "db", "seed"]);
-run("npx", ["next", "build"], { NODE_ENV: "production" });
-run("npx", ["playwright", "test", ...process.argv.slice(2)]);
+run("npx next build", { NODE_ENV: "production" });
+run(["npx playwright test", ...process.argv.slice(2)].join(" "));
