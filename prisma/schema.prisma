@@ -1,4 +1,4 @@
-// Models are added in P02 (SPEC §9).
+// PEC Market data model — SPEC §9. Money is always integer paise.
 generator client {
   provider = "prisma-client"
   output   = "../src/generated/prisma"
@@ -6,4 +6,261 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+}
+
+enum Role {
+  CUSTOMER
+  SHOP_OWNER
+  ADMIN
+}
+
+enum AccountStatus {
+  ACTIVE
+  WARNED
+  SUSPENDED
+}
+
+enum OrderStatus {
+  PENDING_PAYMENT
+  PAYMENT_FAILED
+  PLACED_PAID
+  PREPARING
+  READY_FOR_PICKUP
+  COMPLETED
+  REFUND_REQUESTED
+  REFUNDED
+  COMPLAINT_FILED
+  RESOLVED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  REFUND_REQUESTED
+  REFUNDED
+  PARTIALLY_REFUNDED
+  FAILED
+}
+
+enum ComplaintType {
+  REFUND
+  COMPLAINT
+}
+
+enum ComplaintStatus {
+  OPEN
+  ESCALATED
+  RESOLVED
+  REJECTED
+}
+
+enum ReportReason {
+  NO_SHOW
+  MISBEHAVIOR
+  OTHER
+}
+
+enum ReportStatus {
+  OPEN
+  ACTIONED
+  DISMISSED
+}
+
+enum NotificationType {
+  ORDER_STATUS
+  NEW_ORDER
+  DISPUTE
+  REPORT
+  ACCOUNT
+}
+
+model User {
+  id             String        @id @default(cuid())
+  role           Role
+  name           String
+  email          String        @unique
+  passwordHash   String
+  phone          String?
+  status         AccountStatus @default(ACTIVE)
+  warningMessage String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  shop           Shop?
+  orders         Order[]          @relation("CustomerOrders")
+  orderEvents    OrderEvent[]
+  reviews        Review[]
+  complaints     Complaint[]
+  reportsAgainst CustomerReport[]
+  notifications  Notification[]
+
+  @@index([role, status])
+}
+
+model Shop {
+  id          String   @id @default(cuid())
+  ownerId     String   @unique
+  name        String
+  description String   @default("")
+  logoUrl     String?
+  location    String
+  isOpen      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  owner     User             @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  menuItems MenuItem[]
+  orders    Order[]
+  reviews   Review[]
+  reports   CustomerReport[]
+
+  @@index([name])
+}
+
+model MenuItem {
+  id              String   @id @default(cuid())
+  shopId          String
+  name            String
+  description     String   @default("")
+  photoUrl        String?
+  pricePaise      Int
+  prepTimeMinutes Int
+  inStock         Boolean  @default(true)
+  isArchived      Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  shop       Shop        @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  orderItems OrderItem[]
+
+  @@index([shopId, isArchived])
+}
+
+model Order {
+  id                      String        @id @default(cuid())
+  orderNumber             String        @unique
+  customerId              String
+  shopId                  String
+  status                  OrderStatus   @default(PENDING_PAYMENT)
+  totalPaise              Int
+  paymentStatus           PaymentStatus @default(PENDING)
+  stripeCheckoutSessionId String?       @unique
+  stripePaymentId         String?
+  refundedPaise           Int           @default(0)
+  createdAt               DateTime      @default(now())
+  updatedAt               DateTime      @updatedAt
+
+  customer   User             @relation("CustomerOrders", fields: [customerId], references: [id], onDelete: Restrict)
+  shop       Shop             @relation(fields: [shopId], references: [id], onDelete: Restrict)
+  items      OrderItem[]
+  events     OrderEvent[]
+  review     Review?
+  complaints Complaint[]
+  reports    CustomerReport[]
+
+  @@index([customerId, createdAt])
+  @@index([shopId, status, createdAt])
+}
+
+model OrderItem {
+  id                String  @id @default(cuid())
+  orderId           String
+  menuItemId        String
+  nameAtOrder       String
+  quantity          Int
+  pricePaiseAtOrder Int
+  refunded          Boolean @default(false)
+
+  order    Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  menuItem MenuItem @relation(fields: [menuItemId], references: [id], onDelete: Restrict)
+
+  @@index([orderId])
+  @@index([menuItemId])
+}
+
+model OrderEvent {
+  id         String       @id @default(cuid())
+  orderId    String
+  fromStatus OrderStatus?
+  toStatus   OrderStatus
+  actorId    String?
+  note       String?
+  createdAt  DateTime     @default(now())
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  actor User? @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([orderId, createdAt])
+}
+
+model Review {
+  id         String   @id @default(cuid())
+  orderId    String   @unique
+  customerId String
+  shopId     String
+  rating     Int
+  comment    String   @default("")
+  photos     String[]
+  createdAt  DateTime @default(now())
+
+  order    Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  customer User  @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  shop     Shop  @relation(fields: [shopId], references: [id], onDelete: Cascade)
+
+  @@index([shopId, createdAt])
+}
+
+model Complaint {
+  id                String          @id @default(cuid())
+  orderId           String
+  raisedById        String
+  type              ComplaintType
+  description       String
+  itemIds           String[]
+  refundAmountPaise Int?
+  status            ComplaintStatus @default(OPEN)
+  resolution        String?
+  shopResponse      String?
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  order    Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  raisedBy User  @relation(fields: [raisedById], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+  @@index([status, createdAt])
+}
+
+model CustomerReport {
+  id          String       @id @default(cuid())
+  shopId      String
+  customerId  String
+  orderId     String?
+  reason      ReportReason
+  description String
+  status      ReportStatus @default(OPEN)
+  adminNote   String?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  shop     Shop   @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  customer User   @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  order    Order? @relation(fields: [orderId], references: [id], onDelete: SetNull)
+
+  @@index([status, createdAt])
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  type      NotificationType
+  title     String
+  body      String
+  link      String
+  readAt    DateTime?
+  createdAt DateTime         @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, readAt, createdAt])
 }

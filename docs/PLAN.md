@@ -19,7 +19,7 @@ from the course brief so the git history maps onto the SDLC section of the repor
   - **Accept:** `npm run verify` passes; starting the server and curling `/api/health` returns ok with `db: true`;
     a trivial Vitest test and a trivial Playwright test (home page loads) pass.
 
-- [ ] **P02 — Data model, state machine, seed**
+- [x] **P02 — Data model, state machine, seed**
   - Full Prisma schema from SPEC §9 with all enums. First migration.
   - `src/lib/order-state.ts`: transition table from SPEC §5, `canTransition(from, to, actorRole)`, typed errors.
   - Seed script per SPEC §10 (SVG placeholders generated into `uploads/seed/`). The seed must be **idempotent**:
