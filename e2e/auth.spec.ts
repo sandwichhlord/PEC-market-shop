@@ -4,7 +4,7 @@ import { assertE2eDatabaseUrl } from "./support/e2e-db";
 
 const uid = () => Math.random().toString(36).slice(2, 8);
 
-/** Admin actions arrive in P11; until then account status is changed directly in the (guarded) e2e database. */
+/** Sets account status directly in the (guarded) e2e database; these specs test the customer side, admin.spec the admin UI. */
 async function setAccountStatus(email: string, status: "WARNED" | "SUSPENDED", warningMessage: string | null = null) {
   const client = new Client({ connectionString: assertE2eDatabaseUrl(process.env.E2E_DATABASE_URL) });
   await client.connect();

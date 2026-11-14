@@ -39,6 +39,13 @@ export interface ShopReviewEvent {
   count: number;
 }
 
+/** A shop reported a customer, or an admin acted on a report (admin queue and dashboard). */
+export interface ReportChangedEvent {
+  type: "report:changed";
+  reportId: string;
+  shopId: string;
+}
+
 /** A Notification row was created for `userId` (bell count, list and toast). */
 export interface NotificationEvent {
   type: "notification:new";
@@ -54,7 +61,7 @@ export interface NotificationEvent {
   };
 }
 
-export type RealtimeEvent = OrderStatusEvent | MenuItemEvent | ShopUpdatedEvent | ShopReviewEvent | NotificationEvent;
+export type RealtimeEvent = OrderStatusEvent | MenuItemEvent | ShopUpdatedEvent | ShopReviewEvent | ReportChangedEvent | NotificationEvent;
 export type RealtimeEventName = RealtimeEvent["type"];
 export type RealtimeEventOf<N extends RealtimeEventName> = Extract<RealtimeEvent, { type: N }>;
 
@@ -73,9 +80,16 @@ export function roomsFor(event: RealtimeEvent): string[] {
     case "shop:updated":
     case "shop:review":
       return [`menu:${event.shopId}`, `shop:${event.shopId}`];
+    case "report:changed":
+      return ["admin"];
     case "notification:new":
       return [`user:${event.userId}`];
   }
+}
+
+/** Closes every open socket of a user (they were just suspended); reconnecting is refused at the handshake. */
+export function disconnectUser(userId: string): void {
+  getIO()?.in(`user:${userId}`).disconnectSockets(true);
 }
 
 export function emit(event: RealtimeEvent): void {

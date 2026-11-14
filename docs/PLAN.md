@@ -98,7 +98,7 @@ from the course brief so the git history maps onto the SDLC section of the repor
   - **Accept:** tests: review blocked before COMPLETED, second review blocked, other user's order blocked, average
     updates; `npm run verify` passes.
 
-- [ ] **P11 — Customer reports & admin portal**
+- [x] **P11 — Customer reports & admin portal**
   - Shop: report customer from an order (reason + description).
   - Admin: dashboard counts; disputes queue (filter, force refund full/items, resolve with note); reports queue
     (warn with message / suspend / reinstate / dismiss); users list with search and status actions; shops list.

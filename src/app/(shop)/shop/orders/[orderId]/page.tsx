@@ -7,11 +7,14 @@ import { ShopDisputeActions } from "@/components/disputes/ShopDisputeActions";
 import { LiveRefresh } from "@/components/realtime/LiveRefresh";
 import { ReviewCard } from "@/components/reviews/ReviewCard";
 import { KitchenActionButton } from "@/components/shop/KitchenActionButton";
+import { ReportCustomer } from "@/components/shop/ReportCustomer";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { formatDateTime } from "@/lib/datetime";
 import { formatPaise } from "@/lib/money";
 import { ORDER_STATUS_LABEL, PAYMENT_STATUS_LABEL } from "@/lib/order-status";
+import { REPORT_REASON_LABEL, REPORT_STATUS_LABEL } from "@/lib/reports";
 import { requirePageShop } from "@/server/shops/current";
+import { listOrderReports } from "@/server/reports/reports";
 import { findShopOrder } from "@/server/shops/orders";
 
 export const metadata: Metadata = { title: "Order · PEC Market shop" };
@@ -21,6 +24,8 @@ export default async function ShopOrderPage({ params }: { params: Promise<{ orde
   const { orderId } = await params;
   const order = await findShopOrder(shop.id, orderId);
   if (!order) notFound();
+  const reports = await listOrderReports(shop.id, order.id);
+  const openReport = reports.some((r) => r.status === "OPEN");
 
   return (
     <>
@@ -125,6 +130,23 @@ export default async function ShopOrderPage({ params }: { params: Promise<{ orde
                 <Phone aria-hidden="true" className="size-4" />
                 {order.customer.phone}
               </a>
+            )}
+            {reports.length > 0 && (
+              <ul className="mt-3 space-y-2 border-t border-slate-100 pt-3">
+                {reports.map((r) => (
+                  <li key={r.id} data-testid="customer-report" data-report-status={r.status} className="rounded-lg bg-rose-50 p-2 text-xs text-rose-900">
+                    <p className="font-medium">
+                      You reported: {REPORT_REASON_LABEL[r.reason]} · {r.status === "OPEN" ? "with the admin" : REPORT_STATUS_LABEL[r.status].toLowerCase()}
+                    </p>
+                    <p className="mt-0.5 whitespace-pre-line">{r.description}</p>
+                  </li>
+                ))}
+              </ul>
+            )}
+            {!openReport && (
+              <div className="mt-2">
+                <ReportCustomer shopId={shop.id} orderId={order.id} customerName={order.customer.name} />
+              </div>
             )}
           </section>
           <section aria-labelledby="timeline-heading" className="rounded-xl border border-slate-200 bg-white p-4">

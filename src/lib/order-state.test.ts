@@ -39,6 +39,11 @@ const ALLOWED: Case[] = [
   ["COMPLAINT_FILED", "RESOLVED", "SHOP_OWNER"],
   ["COMPLAINT_FILED", "RESOLVED", "ADMIN"],
   ["COMPLAINT_FILED", "REFUNDED", "ADMIN"],
+  // Admin force refund of an escalated dispute (the order resumed after the shop rejected the request).
+  ["PLACED_PAID", "REFUNDED", "ADMIN"],
+  ["PREPARING", "REFUNDED", "ADMIN"],
+  ["READY_FOR_PICKUP", "REFUNDED", "ADMIN"],
+  ["COMPLETED", "REFUNDED", "ADMIN"],
 ];
 
 // Transitions not in the table at all → InvalidTransitionError (409).
@@ -81,6 +86,10 @@ const WRONG_ACTOR: Case[] = [
   ["COMPLAINT_FILED", "RESOLVED", "CUSTOMER"],
   ["COMPLAINT_FILED", "REFUNDED", "SHOP_OWNER"],
   ["COMPLAINT_FILED", "REFUNDED", "CUSTOMER"],
+  // Only the admin may refund outside a dispute status.
+  ["PREPARING", "REFUNDED", "SHOP_OWNER"],
+  ["COMPLETED", "REFUNDED", "SHOP_OWNER"],
+  ["COMPLETED", "REFUNDED", "CUSTOMER"],
 ];
 
 describe("order state machine — allowed transitions", () => {

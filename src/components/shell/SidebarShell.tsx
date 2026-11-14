@@ -1,6 +1,6 @@
 "use client";
 
-import { ClipboardList, LayoutDashboard, Menu, Store, UtensilsCrossed, X, type LucideIcon } from "lucide-react";
+import { ClipboardList, Flag, LayoutDashboard, Menu, Scale, Store, Users, UtensilsCrossed, X, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
@@ -19,7 +19,7 @@ interface NavItem {
   icon: LucideIcon;
 }
 
-// Navigation per portal; later phases add their pages here.
+// Navigation per portal.
 const NAV: Record<SidebarPortal, NavItem[]> = {
   shop: [
     { href: "/shop", label: "Dashboard", icon: LayoutDashboard },
@@ -27,7 +27,13 @@ const NAV: Record<SidebarPortal, NavItem[]> = {
     { href: "/shop/menu", label: "Menu", icon: UtensilsCrossed },
     { href: "/shop/profile", label: "Shop profile", icon: Store },
   ],
-  admin: [{ href: "/admin", label: "Dashboard", icon: LayoutDashboard }],
+  admin: [
+    { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
+    { href: "/admin/disputes", label: "Disputes", icon: Scale },
+    { href: "/admin/reports", label: "Reports", icon: Flag },
+    { href: "/admin/users", label: "Users", icon: Users },
+    { href: "/admin/shops", label: "Shops", icon: Store },
+  ],
 };
 
 const SUBTITLE: Record<SidebarPortal, string> = { shop: "Shop portal", admin: "Admin" };

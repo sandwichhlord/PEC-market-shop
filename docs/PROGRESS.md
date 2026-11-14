@@ -318,3 +318,49 @@ requests created here.
 **Notes:** one of three `npm run verify` runs failed an untouched P06 checkout test (a checkout transaction hit an FK
 error mid-transaction while the host was at 99% CPU); the other two runs were fully green. See Blocked for the full
 E2E run.
+
+## P11 — Customer reports & admin portal (2026-11-15)
+
+**Built:**
+- **Shop → admin reports:** "Report customer" on the shop's order page (reason No show / Misbehaviour / Other +
+  description). `POST/GET /api/shops/[shopId]/orders/[orderId]/report`. One open report per order. Every admin gets
+  a notification plus a live `report:changed` push.
+- **Admin portal** (sidebar: Dashboard, Disputes, Reports, Users, Shops), each page with loading / error / empty
+  states:
+  - *Dashboard:* 8 live counts, each linking to the filtered list. Escalated disputes and open reports are
+    highlighted.
+  - *Disputes:* queue with status tabs plus shop and type filters. Detail page shows the claim, items, payment and
+    timeline, with **Force refund** (chosen items or everything left) and **Resolve / close with note**.
+  - *Reports:* queue with warn (message), suspend, reinstate and dismiss, plus an optional admin note. Shows the
+    customer's status and how often they have been reported.
+  - *Users:* search by name/email/phone with role and status filters, and the same account actions.
+  - *Shops:* every shop with owner status, rating, paid-order / dish / open-dispute counts, and owner actions.
+- **APIs** under `/api/admin/{stats,disputes,disputes/[id],reports,reports/[id],users,users/[id],shops}`, all
+  `requireRole("ADMIN")` + zod.
+- **State machine:** admin may force-refund from PLACED_PAID / PREPARING / READY_FOR_PICKUP / COMPLETED → REFUNDED,
+  for escalated disputes whose order has resumed. `changeStatus` gained `shopMessage`.
+- **Suspension:** closes the user's sockets right away. Their next API call or page load logs them out (existing
+  guards and layouts).
+
+**Verified:**
+- `npm run verify` passes: 573 Vitest tests, 36 new in `tests/api/admin.test.ts` and
+  `tests/api/admin-disputes.test.ts` (written by a subagent), plus new state-machine cases. They cover:
+  - 401 / 403 on all 9 admin routes for no session, customers, shop owners and suspended admins;
+  - shop reports: notifications, duplicate, 404 / 403, validation;
+  - every report action, including repeats and closed reports;
+  - every user action on customers and shop owners: hidden shop, ADMIN_ACCOUNT, filters;
+  - a suspended user is rejected with the cookie cleared on the next request, and works again after reinstate;
+  - stats;
+  - force refund full / partial and resolve on OPEN and ESCALATED refund requests and on complaints, double and
+    racing refunds (one provider call), ALREADY_REFUNDED, foreign items, provider failure → 502 and retry,
+    ORDER_IN_DISPUTE, list filters and detail.
+- **Bug the tests caught and I fixed:** an admin refund on an escalated dispute was issued at the provider but not
+  recorded if the shop moved the order mid-call. Recording now re-reads the order and retries against its current
+  status.
+- New `e2e/admin.spec.ts` passed on the first try (no retries): fresh customer orders → shop reports them → admin
+  suspends from the reports queue with a note → Actioned tab shows SUSPENDED → customer's next page load goes to
+  `/login?reason=suspended` → admin reinstates from Users → customer can log in again; and every admin page plus a
+  dispute detail fits 375px with no sideways scroll.
+
+**Not run:** the full `npm run e2e` suite (the host is still under the load recorded in Blocked). P12 owns the full
+E2E pass, including the admin force-refund scenario.

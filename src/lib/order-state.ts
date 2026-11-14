@@ -16,6 +16,9 @@ export const COMPLAINABLE_STATUSES = [
   "COMPLETED",
 ] as const satisfies readonly OrderStatus[];
 
+/** Non-dispute statuses from which an admin's full force refund moves the order straight to REFUNDED. */
+export const ADMIN_FORCE_REFUND_FROM = [...COMPLAINABLE_STATUSES] as const satisfies readonly OrderStatus[];
+
 interface TransitionRule {
   from: OrderStatus;
   to: OrderStatus;
@@ -46,6 +49,9 @@ export const TRANSITIONS: readonly TransitionRule[] = [
   ...COMPLAINABLE_STATUSES.map((from) => rule(from, "COMPLAINT_FILED", ["CUSTOMER"])),
   rule("COMPLAINT_FILED", "RESOLVED", ["SHOP_OWNER", "ADMIN"]),
   rule("COMPLAINT_FILED", "REFUNDED", ["ADMIN"]),
+  // Admin force refund of an escalated dispute: after a shop rejects a refund the order resumes, so the admin's full
+  // refund starts from wherever the order is now (SPEC §6 "force a Stripe refund"; see DECISIONS P11).
+  ...ADMIN_FORCE_REFUND_FROM.map((from) => rule(from, "REFUNDED", ["ADMIN"])),
 ];
 
 export interface TransitionOptions {

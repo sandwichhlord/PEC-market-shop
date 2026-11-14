@@ -27,6 +27,8 @@ export interface ChangeStatusInput {
   onlyFrom?: readonly OrderStatus[];
   /** Replaces the customer's notification text for this change (e.g. a partial refund or a rejected request). */
   customerMessage?: string;
+  /** Also tells the shop owner about this change (DISPUTE notification), e.g. an admin's decision on a dispute. */
+  shopMessage?: string;
   /**
    * Extra writes that must commit or roll back together with the status change (complaint rows, refunded items).
    * Runs after the order row is updated; throwing aborts the whole change.
@@ -66,10 +68,12 @@ interface NotificationContext {
   actor: StatusActor;
   /** Overrides the customer's notification body. */
   customerMessage?: string;
+  /** Adds a DISPUTE notification for the shop owner with this body. */
+  shopMessage?: string;
 }
 
 /** Who hears about a status change (SPEC §3/§4): the shop about new paid orders and disputes, the customer about the rest. */
-export function notificationsFor({ order, from, to, actor, customerMessage }: NotificationContext): Prisma.NotificationCreateManyInput[] {
+export function notificationsFor({ order, from, to, actor, customerMessage, shopMessage }: NotificationContext): Prisma.NotificationCreateManyInput[] {
   const customerLink = `/orders/${order.id}`;
   const shopLink = `/shop/orders/${order.id}`;
   const out: Prisma.NotificationCreateManyInput[] = [];
@@ -91,6 +95,9 @@ export function notificationsFor({ order, from, to, actor, customerMessage }: No
       body: "The customer needs a response. Open the order to review it.",
       link: shopLink,
     });
+  }
+  if (shopMessage && actor.id !== order.shopOwnerId) {
+    out.push({ userId: order.shopOwnerId, type: "DISPUTE", title: `Order ${order.orderNumber}`, body: shopMessage, link: shopLink });
   }
 
   if (actor.id !== order.customerId) {
@@ -116,7 +123,7 @@ export function notificationsFor({ order, from, to, actor, customerMessage }: No
  * and 409 ORDER_CHANGED if the order's status changed between reading and writing it.
  */
 export async function changeStatus(input: ChangeStatusInput): Promise<ChangedOrder> {
-  const { orderId, to, actor, note, payment, onlyFrom, customerMessage, inTransaction } = input;
+  const { orderId, to, actor, note, payment, onlyFrom, customerMessage, shopMessage, inTransaction } = input;
   const outcome = await prisma.$transaction(async (tx) => {
     const order = await tx.order.findUnique({
       where: { id: orderId },
@@ -161,6 +168,7 @@ export async function changeStatus(input: ChangeStatusInput): Promise<ChangedOrd
       to,
       actor,
       customerMessage,
+      shopMessage,
     });
     const created =
       notifications.length > 0
