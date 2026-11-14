@@ -4,6 +4,8 @@ import { ClipboardList, LayoutDashboard, Menu, Store, UtensilsCrossed, X, type L
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
+import { NotificationBell } from "@/components/notifications/NotificationBell";
+import { NotificationsProvider } from "@/components/notifications/NotificationsProvider";
 import { BrandMark } from "@/components/ui/BrandMark";
 import { PORTAL_LOGIN } from "@/lib/portals";
 import { LogoutButton } from "./LogoutButton";
@@ -43,7 +45,15 @@ interface SidebarShellProps {
 }
 
 /** Shop / admin portal frame: fixed sidebar on wide screens, slide-in drawer behind a menu button on mobile. */
-export function SidebarShell({ portal, heading, userName, warning, children }: SidebarShellProps) {
+export function SidebarShell(props: SidebarShellProps) {
+  return (
+    <NotificationsProvider>
+      <SidebarFrame {...props} />
+    </NotificationsProvider>
+  );
+}
+
+function SidebarFrame({ portal, heading, userName, warning, children }: SidebarShellProps) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const root = `/${portal}`;
@@ -117,8 +127,12 @@ export function SidebarShell({ portal, heading, userName, warning, children }: S
         >
           <Menu aria-hidden="true" className="size-5" />
         </button>
-        <span className="truncate font-semibold text-slate-900">{heading}</span>
+        <span className="min-w-0 flex-1 truncate font-semibold text-slate-900">{heading}</span>
+        <NotificationBell />
       </header>
+      <div className="sticky top-0 z-30 hidden h-14 items-center justify-end border-b border-slate-200 bg-white/95 px-8 backdrop-blur md:flex">
+        <NotificationBell />
+      </div>
       {warning && <WarningBanner message={warning} />}
       <main className="mx-auto w-full max-w-6xl px-4 py-6 md:px-8">{children}</main>
     </div>

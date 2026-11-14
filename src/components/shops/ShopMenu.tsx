@@ -28,16 +28,18 @@ const REJECTION_MESSAGE: Record<Exclude<Extract<AddResult, { ok: false }>["reaso
 export function ShopMenu({ shop, dishes }: { shop: CartShopRef; dishes: MenuDish[] }) {
   const hydrated = useCartHydrated();
   const cart = useCartStore();
-  const [selected, setSelected] = useState<MenuDish | null>(null);
+  // By id, so the open sheet follows live menu updates (stock changes, removed dishes).
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const selected = dishes.find((d) => d.id === selectedId) ?? null;
   const [pendingSwitch, setPendingSwitch] = useState<PendingSwitch | null>(null);
   const [announcement, setAnnouncement] = useState("");
 
   const handleResult = (result: AddResult, dish: MenuDish, quantity: number) => {
     if (result.ok) {
       setAnnouncement(`Added ${quantity} × ${dish.name} to your cart.`);
-      setSelected(null);
+      setSelectedId(null);
     } else if (result.reason === "OTHER_SHOP") {
-      setSelected(null);
+      setSelectedId(null);
       setPendingSwitch({ dish, quantity });
     } else {
       setAnnouncement(`${dish.name} ${REJECTION_MESSAGE[result.reason]}`);
@@ -71,7 +73,7 @@ export function ShopMenu({ shop, dishes }: { shop: CartShopRef; dishes: MenuDish
                 dish={dish}
                 shopOpen={shop.isOpen}
                 inCart={quantityInCart(dish.id)}
-                onOpen={() => setSelected(dish)}
+                onOpen={() => setSelectedId(dish.id)}
                 onQuickAdd={() => add(dish, 1)}
               />
             </li>
@@ -117,7 +119,7 @@ export function ShopMenu({ shop, dishes }: { shop: CartShopRef; dishes: MenuDish
         </>
       )}
 
-      <DishSheet dish={selected} shopOpen={shop.isOpen} onClose={() => setSelected(null)} onAdd={add} />
+      <DishSheet dish={selected} shopOpen={shop.isOpen} onClose={() => setSelectedId(null)} onAdd={add} />
 
       <Sheet open={pendingSwitch !== null} onClose={() => setPendingSwitch(null)} title="Start a new cart?">
         <p className="text-sm text-slate-700">

@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { CustomerOrderCard } from "@/components/orders/CustomerOrderCard";
 import { CustomerOrderTabs } from "@/components/orders/CustomerOrderTabs";
+import { LiveRefresh } from "@/components/realtime/LiveRefresh";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { customerOrderTabSchema } from "@/lib/validation/orders";
@@ -26,6 +27,7 @@ export default async function OrdersPage({ searchParams }: { searchParams: Promi
 
   return (
     <>
+      <LiveRefresh on={["order:status"]} />
       <PageHeader title="Your orders" />
       <CustomerOrderTabs current={tab} counts={counts} />
       {orders.length === 0 ? (

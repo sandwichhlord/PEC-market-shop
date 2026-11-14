@@ -10,6 +10,7 @@ import { Switch } from "@/components/ui/Switch";
 import { Thumb } from "@/components/ui/Thumb";
 import { apiFetch } from "@/lib/api-client";
 import { formatPaise } from "@/lib/money";
+import { useSocket } from "@/lib/realtime/client";
 import type { OwnerDish } from "@/server/shops/menu";
 import { DishForm } from "./DishForm";
 
@@ -25,6 +26,28 @@ export function MenuManager({ shopId, initialDishes }: { shopId: string; initial
   const [message, setMessage] = useState<{ tone: "success" | "error"; text: string } | null>(null);
 
   const replace = (dish: OwnerDish) => setDishes((list) => list.map((d) => (d.id === dish.id ? dish : d)));
+
+  async function refetch() {
+    const result = await apiFetch<{ dishes: OwnerDish[] }>(`/api/shops/${shopId}/menu`);
+    if (result.ok) setDishes(result.data.dishes);
+  }
+
+  // Changes made elsewhere (another tab or device) show up live; anything unknown triggers a refetch.
+  useSocket({
+    events: {
+      "menu:item": (event) => {
+        if (event.shopId !== shopId || stockPending.has(event.itemId)) return;
+        if (event.archived) {
+          setDishes((list) => list.filter((d) => d.id !== event.itemId));
+        } else if (dishes.some((d) => d.id === event.itemId)) {
+          setDishes((list) => list.map((d) => (d.id === event.itemId ? { ...d, inStock: event.inStock } : d)));
+        } else {
+          void refetch();
+        }
+      },
+    },
+    onReconnect: () => void refetch(),
+  });
 
   async function toggleStock(dish: OwnerDish, inStock: boolean) {
     setMessage(null);

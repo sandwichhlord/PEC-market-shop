@@ -77,7 +77,7 @@ from the course brief so the git history maps onto the SDLC section of the repor
 
 ## Sprint 4 — Real-time & Admin
 
-- [ ] **P08 — Real-time sync & notifications**
+- [x] **P08 — Real-time sync & notifications**
   - Socket.IO auth from the JWT cookie on handshake; join `user:`, `shop:` (owners), `order:` (on order page), `admin` rooms.
   - `emit()` implemented: order status → customer + order room; new paid order → shop room; stock toggle → public
     `menu:<shopId>` room; dispute/report events → admin room. `useSocket` hook with reconnect + refetch on reconnect.

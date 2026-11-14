@@ -2,6 +2,7 @@ import "dotenv/config";
 import { createServer } from "node:http";
 import next from "next";
 import { Server } from "socket.io";
+import { attachRealtime } from "./src/server/realtime/server";
 
 const dev = process.env.NODE_ENV !== "production";
 const port = Number(process.env.PORT ?? 3000);
@@ -17,6 +18,7 @@ const httpServer = createServer((req, res) => {
 
 // destroyUpgrade: false leaves non-Socket.IO upgrades (Next's dev HMR websocket) alone.
 const io = new Server(httpServer, { path: "/socket.io", destroyUpgrade: false });
+attachRealtime(io);
 globalThis.io = io;
 
 httpServer.listen(port, () => {

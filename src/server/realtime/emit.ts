@@ -1,31 +1,69 @@
 // Server → browser push. Business logic calls `emit()` after its database writes commit; this module decides which
 // Socket.IO rooms hear about it. Rooms: user:<id>, shop:<id>, order:<id>, admin, and the public menu:<shopId>.
 // Without a running Socket.IO server (unit tests, scripts) emitting is a no-op.
-import type { OrderStatus, PaymentStatus } from "@/generated/prisma/enums";
+import type { NotificationType, OrderStatus, PaymentStatus } from "@/generated/prisma/enums";
 import { getIO } from "./io";
 
-export type RealtimeEvent =
-  | {
-      type: "order:status";
-      orderId: string;
-      orderNumber: string;
-      shopId: string;
-      customerId: string;
-      fromStatus: OrderStatus;
-      status: OrderStatus;
-      paymentStatus: PaymentStatus;
-    }
-  | { type: "menu:item"; shopId: string; itemId: string; inStock: boolean; archived: boolean }
-  | { type: "shop:updated"; shopId: string; isOpen: boolean };
+export interface OrderStatusEvent {
+  type: "order:status";
+  orderId: string;
+  orderNumber: string;
+  shopId: string;
+  customerId: string;
+  fromStatus: OrderStatus;
+  status: OrderStatus;
+  paymentStatus: PaymentStatus;
+}
+
+export interface MenuItemEvent {
+  type: "menu:item";
+  shopId: string;
+  itemId: string;
+  inStock: boolean;
+  archived: boolean;
+}
+
+export interface ShopUpdatedEvent {
+  type: "shop:updated";
+  shopId: string;
+  isOpen: boolean;
+}
+
+/** A Notification row was created for `userId` (bell count, list and toast). */
+export interface NotificationEvent {
+  type: "notification:new";
+  userId: string;
+  notification: {
+    id: string;
+    type: NotificationType;
+    title: string;
+    body: string;
+    link: string | null;
+    readAt: null;
+    createdAt: string;
+  };
+}
+
+export type RealtimeEvent = OrderStatusEvent | MenuItemEvent | ShopUpdatedEvent | NotificationEvent;
+export type RealtimeEventName = RealtimeEvent["type"];
+export type RealtimeEventOf<N extends RealtimeEventName> = Extract<RealtimeEvent, { type: N }>;
+
+/** Statuses of an open or just-decided dispute: changes into or out of them also go to the admin room (SPEC §6). */
+export const DISPUTE_STATUSES: readonly OrderStatus[] = ["REFUND_REQUESTED", "COMPLAINT_FILED"];
 
 /** The rooms an event is delivered to. Exported for tests. */
 export function roomsFor(event: RealtimeEvent): string[] {
   switch (event.type) {
-    case "order:status":
-      return [`user:${event.customerId}`, `order:${event.orderId}`, `shop:${event.shopId}`];
+    case "order:status": {
+      const rooms = [`user:${event.customerId}`, `order:${event.orderId}`, `shop:${event.shopId}`];
+      if (DISPUTE_STATUSES.includes(event.status) || DISPUTE_STATUSES.includes(event.fromStatus)) rooms.push("admin");
+      return rooms;
+    }
     case "menu:item":
     case "shop:updated":
       return [`menu:${event.shopId}`, `shop:${event.shopId}`];
+    case "notification:new":
+      return [`user:${event.userId}`];
   }
 }
 
@@ -33,4 +71,13 @@ export function emit(event: RealtimeEvent): void {
   const io = getIO();
   if (!io) return;
   io.to(roomsFor(event)).emit(event.type, event);
+}
+
+/** Pushes freshly created Notification rows to their users. */
+export function emitNotifications(
+  rows: readonly { id: string; userId: string; type: NotificationType; title: string; body: string; link: string | null; createdAt: Date }[],
+): void {
+  for (const { userId, createdAt, ...rest } of rows) {
+    emit({ type: "notification:new", userId, notification: { ...rest, readAt: null, createdAt: createdAt.toISOString() } });
+  }
 }

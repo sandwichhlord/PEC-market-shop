@@ -2,6 +2,7 @@ import { ArrowLeft, MapPin } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { LiveRefresh } from "@/components/realtime/LiveRefresh";
 import { ShopMenu } from "@/components/shops/ShopMenu";
 import { Alert } from "@/components/ui/Alert";
 import { Pill } from "@/components/ui/Pill";
@@ -30,6 +31,7 @@ export default async function ShopPage({ params }: Props) {
 
   return (
     <>
+      <LiveRefresh on={["menu:item", "shop:updated"]} shopId={shop.id} subscribe={{ kind: "menu", id: shop.id }} />
       <Link
         href="/shops"
         className="mb-3 inline-flex min-h-10 items-center gap-1 rounded-lg text-sm font-medium text-slate-600 hover:text-slate-900 focus-visible:outline-2 focus-visible:outline-orange-600"

@@ -13,6 +13,14 @@ Append one entry per phase (newest at the bottom).
   which `npm run verify` passed cleanly. Two `npm run e2e` runs: run 1 had 30/32 passing, run 2 had 18/32 passing, and
   every failure was a login or signup redirect timing out (5 s) while the host was slow. Every spec passed in at least
   one run, including all 4 new `e2e/orders.spec.ts` tests. Please re-run `npm run e2e` on an idle machine.
+- **P08 (2026-11-14), same cause:** host CPU 45–91% during the session (VS Code plus another project's Docker stack).
+  `npm run verify` passes (482 tests). Six full `npm run e2e` runs; the first four were fixing real issues
+  (server-start crash, too-strict assertions, mark-read cancelled by a reload). The best run (run 5) passed 33 of 35:
+  all 3 `e2e/realtime.spec.ts` tests passed, including the two-context "start preparing → customer sees PREPARING
+  within 3 s" and the live stock toggle. The 2 failures were a login redirect and a mock payment that each took longer
+  than the 5 s expect timeout. Run 6 started at 91 % CPU and failed 9+ specs at login and checkout steps (a Prisma
+  transaction even exceeded its 5 s limit). Every spec has passed in at least one run.
+  **Needs a human:** re-run `npm run e2e` on an idle machine to confirm a fully green run.
 
 ---
 
@@ -194,3 +202,39 @@ in the page or the API; 375px fit with a screenshot): all 4 passed. Full e2e was
 
 **Deferred by plan:** live updates on the order page and toasts (P08 — `emit()` already sends to `order:`/`user:`
 rooms), refund / complaint actions (P09), review form (P10).
+
+## P08 — Real-time sync & notifications (2026-11-14)
+
+**Built:** Socket.IO handshake auth (`src/server/realtime/server.ts`, attached in `server.ts`). It checks the
+session cookie, refuses anonymous, stale and suspended users, and auto-joins `user:` plus `shop:` (owners) or
+`admin`. Pages subscribe to `order:` and `menu:` rooms through an acked, zod-validated `subscribe`/`unsubscribe`
+protocol, with the same access rules as the API. The Next-free auth helpers (`loadSessionUser`, `orderAccessFor`)
+moved to `src/server/auth/access.ts`, because `server.ts` loads them before Next starts. `emit()` now also routes
+dispute changes to `admin` and pushes `notification:new` to `user:`; `changeStatus` emits every created Notification
+row after commit. API: `GET /api/notifications` (50 newest + unread count) and `POST /api/notifications/read`
+(`{ids}` or `{all:true}`, own rows only). Client: shared socket with reference-counted subscriptions that are re-sent
+on reconnect, and a `useSocket` hook (event handlers, room, `onReconnect` refetch). `LiveRefresh` re-renders server
+pages on matching events and after reconnects: customer order page and list, customer shop menu, shop
+dashboard/orders/order detail, admin dashboard. The shop `MenuManager` applies stock and archive events locally.
+`NotificationsProvider` in every portal shell drives the bell (unread badge, latest 10, mark read, mark all read,
+"See all" for customers), the customer's Notifications tab badge, a live `/notifications` page and toasts. Mark-read
+requests use `keepalive`, so navigating or reloading doesn't cancel them. The socket closes when the shell unmounts
+(logout).
+
+**Verified:** `npm run verify` passes (482 Vitest tests; 22 new). `tests/realtime.test.ts` runs a real Socket.IO
+server with socket.io-client sessions. It covers: refusal of missing/tampered cookies, suspended users and stale
+roles; home rooms per role; order subscriptions (own order yes, other customer no, own shop paid yes / unpaid no,
+other shop no, admin yes); menu subscriptions (visible shop yes, suspended owner / unknown / bad input no,
+unsubscribe leaves). It also checks delivery: a kitchen update reaches the customer (status + notification with the
+stored id), the order room and the shop, but not admin or strangers; a new paid order reaches the shop room with
+NEW_ORDER; disputes reach admin with a DISPUTE note for the shop; stock toggles reach menu watchers and the shop
+only. `tests/api/notifications.test.ts` covers list order, unread count, the 50 cap, every role, mark ids / all,
+keeping the original readAt, other users' rows untouched, validation and 401/403. `roomsFor` unit tests cover admin
+routing for disputes and notifications. New `e2e/realtime.spec.ts` uses two browser contexts: a new paid order
+appears on the shop's open dashboard with a toast; the shop's "start preparing" shows PREPARING on the customer's
+open order page within 3 s with no reload; a toast appears and the bell gets an unread count; ready-for-pickup
+arrives live; mark all read persists after a reload. It also covers a stock toggle reflected live on the customer's
+open menu (and back), and a shop menu tab following another tab. All passed (run 5). `npm run e2e` has not had a
+fully green run on this loaded host (see Blocked).
+
+**Deferred by plan:** report events to the admin room (P11, when reports can be created), dispute response UI (P09).

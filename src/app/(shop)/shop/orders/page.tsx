@@ -1,5 +1,6 @@
 import { ClipboardList } from "lucide-react";
 import type { Metadata } from "next";
+import { LiveRefresh } from "@/components/realtime/LiveRefresh";
 import { OrderFilterTabs } from "@/components/shop/OrderFilterTabs";
 import { ShopOrderCard } from "@/components/shop/ShopOrderCard";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -26,6 +27,7 @@ export default async function ShopOrdersPage({ searchParams }: { searchParams: P
 
   return (
     <>
+      <LiveRefresh on={["order:status"]} shopId={shop.id} />
       <PageHeader title="Orders" description={filter === "active" ? "Oldest first — work through the queue top to bottom." : undefined} />
       <OrderFilterTabs current={filter} counts={counts} />
       {orders.length === 0 ? (

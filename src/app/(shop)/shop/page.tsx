@@ -1,6 +1,7 @@
 import { MapPin } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
+import { LiveRefresh } from "@/components/realtime/LiveRefresh";
 import { ShopOpenToggle } from "@/components/shop/ShopOpenToggle";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Thumb } from "@/components/ui/Thumb";
@@ -24,6 +25,7 @@ export default async function ShopDashboardPage() {
   ];
   return (
     <>
+      <LiveRefresh on={["order:status", "menu:item"]} shopId={shop.id} />
       <PageHeader title="Dashboard" />
       <section aria-label="Shop" className="mb-6 flex items-center gap-4 rounded-xl border border-slate-200 bg-white p-4">
         <Thumb src={shop.logoUrl} alt={`${shop.name} logo`} size="lg" />

@@ -2,6 +2,7 @@ import { ArrowLeft, Phone } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { LiveRefresh } from "@/components/realtime/LiveRefresh";
 import { KitchenActionButton } from "@/components/shop/KitchenActionButton";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { formatDateTime } from "@/lib/datetime";
@@ -22,6 +23,7 @@ export default async function ShopOrderPage({ params }: { params: Promise<{ orde
 
   return (
     <>
+      <LiveRefresh on={["order:status"]} orderId={order.id} />
       <Link
         href="/shop/orders"
         className="mb-3 inline-flex min-h-11 items-center gap-1 text-sm font-medium text-slate-600 hover:text-slate-900 focus-visible:outline-2 focus-visible:outline-orange-600"

@@ -49,6 +49,32 @@ describe("realtime rooms", () => {
     ).toEqual(["order:o1", "shop:s1", "user:u1"]);
   });
 
+  it("also sends dispute changes (into or out of REFUND_REQUESTED / COMPLAINT_FILED) to the admin room", () => {
+    const base = { type: "order:status", orderId: "o1", orderNumber: "PEC1", shopId: "s1", customerId: "u1", paymentStatus: "PAID" } as const;
+    expect(roomsFor({ ...base, fromStatus: "PREPARING", status: "REFUND_REQUESTED" })).toContain("admin");
+    expect(roomsFor({ ...base, fromStatus: "COMPLETED", status: "COMPLAINT_FILED" })).toContain("admin");
+    expect(roomsFor({ ...base, fromStatus: "REFUND_REQUESTED", status: "REFUNDED" })).toContain("admin");
+    expect(roomsFor({ ...base, fromStatus: "COMPLAINT_FILED", status: "RESOLVED" })).toContain("admin");
+    expect(roomsFor({ ...base, fromStatus: "REFUND_REQUESTED", status: "PREPARING" })).toContain("admin");
+    for (const [fromStatus, status] of [
+      ["PENDING_PAYMENT", "PLACED_PAID"],
+      ["PLACED_PAID", "PREPARING"],
+      ["READY_FOR_PICKUP", "COMPLETED"],
+    ] as const) {
+      expect(roomsFor({ ...base, fromStatus, status })).not.toContain("admin");
+    }
+  });
+
+  it("sends notifications only to their user", () => {
+    expect(
+      roomsFor({
+        type: "notification:new",
+        userId: "u9",
+        notification: { id: "n1", type: "ORDER_STATUS", title: "t", body: "b", link: null, readAt: null, createdAt: "2026-11-14T00:00:00Z" },
+      }),
+    ).toEqual(["user:u9"]);
+  });
+
   it("sends menu changes to the public menu room and the shop", () => {
     expect(roomsFor({ type: "menu:item", shopId: "s1", itemId: "d1", inStock: false, archived: false }).sort()).toEqual([
       "menu:s1",

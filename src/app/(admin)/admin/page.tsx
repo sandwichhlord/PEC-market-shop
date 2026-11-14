@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { LiveRefresh } from "@/components/realtime/LiveRefresh";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { getAdminCounts } from "@/server/admin/stats";
 
@@ -17,6 +18,7 @@ export default async function AdminDashboardPage() {
   ];
   return (
     <>
+      <LiveRefresh on={["order:status"]} />
       <PageHeader title="Dashboard" description="Market activity at a glance." />
       <dl className="grid grid-cols-2 gap-3 lg:grid-cols-3">
         {stats.map(([label, value]) => (

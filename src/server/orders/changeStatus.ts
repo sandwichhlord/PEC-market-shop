@@ -7,7 +7,7 @@ import { InvalidTransitionError, transition, type TransitionActor } from "@/lib/
 import { CUSTOMER_STATUS_MESSAGE, ORDER_STATUS_LABEL } from "@/lib/order-status";
 import { prisma } from "@/server/db";
 import { HttpError, notFound } from "@/server/http";
-import { emit } from "@/server/realtime/emit";
+import { emit, emitNotifications } from "@/server/realtime/emit";
 
 export interface StatusActor {
   /** The user making the change; null for the system (payment confirmations, webhooks). */
@@ -108,7 +108,7 @@ export function notificationsFor({ order, from, to, actor }: NotificationContext
  */
 export async function changeStatus(input: ChangeStatusInput): Promise<ChangedOrder> {
   const { orderId, to, actor, note, payment, onlyFrom } = input;
-  const changed = await prisma.$transaction(async (tx) => {
+  const outcome = await prisma.$transaction(async (tx) => {
     const order = await tx.order.findUnique({
       where: { id: orderId },
       select: {
@@ -151,9 +151,15 @@ export async function changeStatus(input: ChangeStatusInput): Promise<ChangedOrd
       to,
       actor,
     });
-    if (notifications.length > 0) await tx.notification.createMany({ data: notifications });
+    const created =
+      notifications.length > 0
+        ? await tx.notification.createManyAndReturn({
+            data: notifications,
+            select: { id: true, userId: true, type: true, title: true, body: true, link: true, createdAt: true },
+          })
+        : [];
 
-    return {
+    const result: ChangedOrder = {
       id: order.id,
       orderNumber: order.orderNumber,
       shopId: order.shopId,
@@ -161,10 +167,13 @@ export async function changeStatus(input: ChangeStatusInput): Promise<ChangedOrd
       fromStatus: from,
       status: to,
       paymentStatus: payment?.paymentStatus ?? order.paymentStatus,
-    } satisfies ChangedOrder;
+    };
+    return { result, created };
   });
 
+  const { result: changed, created } = outcome;
   const { id, ...rest } = changed;
   emit({ type: "order:status", orderId: id, ...rest });
+  emitNotifications(created);
   return changed;
 }

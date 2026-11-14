@@ -11,7 +11,9 @@ async function logIn(page: Page, path: string, email: string, password: string, 
 }
 
 const card = (page: Page, orderNumber: string) => page.getByTestId("order-card").filter({ hasText: `#${orderNumber}` });
-const step = (page: Page, status: string) => page.getByTestId("order-progress").locator(`[data-step="${status}"]`);
+// `visible: true`: on a slow host, React's streamed copy of the page can linger in a hidden <div id="S:0">.
+const step = (page: Page, status: string) =>
+  page.getByTestId("order-progress").filter({ visible: true }).locator(`[data-step="${status}"]`);
 
 test("order history has Active and Past tabs", async ({ page }) => {
   await logIn(page, "/login", "student1@pec.test", "student123", /\/shops$/);
@@ -54,8 +56,8 @@ test("order page shows the timeline and estimated ready time, and follows the sh
   await expect(step(page, "PLACED_PAID")).toHaveAttribute("data-state", "done");
   await expect(step(page, "PREPARING")).toHaveAttribute("data-state", "current");
   await expect(step(page, "READY_FOR_PICKUP")).toHaveAttribute("data-state", "upcoming");
-  await expect(page.getByTestId("ready-estimate")).toHaveText(/Estimated ready by \d{1,2}:\d{2}\s?[ap]m|Should be ready any minute/i);
-  const timeline = page.getByTestId("order-timeline");
+  await expect(page.getByTestId("ready-estimate").filter({ visible: true })).toHaveText(/Estimated ready by \d{1,2}:\d{2}\s?[ap]m|Should be ready any minute/i);
+  const timeline = page.getByTestId("order-timeline").filter({ visible: true });
   await expect(timeline.locator("li")).toHaveCount(3);
   await expect(timeline.locator("li").nth(0)).toContainText("Order created");
   await expect(timeline.locator("li").nth(2)).toContainText("Preparing");
@@ -72,16 +74,16 @@ test("order page shows the timeline and estimated ready time, and follows the sh
   await page.reload();
   await expect(step(page, "PREPARING")).toHaveAttribute("data-state", "done");
   await expect(step(page, "READY_FOR_PICKUP")).toHaveAttribute("data-state", "current");
-  await expect(page.getByTestId("ready-estimate")).toContainText("Ready for pickup since");
+  await expect(page.getByTestId("ready-estimate").filter({ visible: true })).toContainText("Ready for pickup since");
 
   await shopPage.getByRole("button", { name: /Mark completed/ }).click();
   await expect(shopPage.getByRole("button", { name: /Mark completed/ })).toHaveCount(0);
   await shop.close();
 
   await page.reload();
-  await expect(page.locator("[data-status]").first()).toHaveAttribute("data-status", "COMPLETED");
+  await expect(page.locator("main [data-status]").filter({ visible: true }).first()).toHaveAttribute("data-status", "COMPLETED");
   await expect(step(page, "COMPLETED")).toHaveAttribute("data-state", "done");
-  await expect(page.getByTestId("ready-estimate")).toHaveCount(0);
+  await expect(page.getByTestId("ready-estimate").filter({ visible: true })).toHaveCount(0);
   await expect(timeline.locator("li")).toHaveCount(5);
 
   // It moved to the Past tab.
