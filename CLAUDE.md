@@ -56,6 +56,11 @@ pin the previous major and log it in `docs/DECISIONS.md`.
 - `npm run e2e` — Playwright against a fresh `pec_market_e2e` database with `PAYMENTS_PROVIDER=mock`
 - `npm run db:migrate` · `npm run db:seed` · `npm run db:reset`
 
+**Database safety:** never run `npm run db:reset`, `prisma migrate reset`, or `prisma db push --force-reset`, and
+never set `PRISMA_USER_CONSENT_FOR_DANGEROUS_AI_ACTION`. Resetting the dev DB is human-only. To get a clean
+database for tests, use `npm run e2e`: its Playwright global setup (`e2e/global-setup.ts`) migrates, truncates and
+seeds `pec_market_e2e`, guarded to database names ending in `_e2e`. Do not weaken that guard.
+
 The Postgres container is started by the human's `setup.sh`. If the DB is unreachable, try
 `docker compose up -d db` once; if that is not possible, note it in PROGRESS.md and continue with work that does not need the DB.
 

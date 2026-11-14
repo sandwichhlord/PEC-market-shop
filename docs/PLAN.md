@@ -22,9 +22,14 @@ from the course brief so the git history maps onto the SDLC section of the repor
 - [ ] **P02 — Data model, state machine, seed**
   - Full Prisma schema from SPEC §9 with all enums. First migration.
   - `src/lib/order-state.ts`: transition table from SPEC §5, `canTransition(from, to, actorRole)`, typed errors.
-  - Seed script per SPEC §10 (SVG placeholders generated into `uploads/seed/`).
-  - **Accept:** `npm run db:reset` migrates + seeds cleanly; unit tests cover **every** allowed transition and at least
-    10 disallowed ones (incl. wrong actor); `npm run verify` passes.
+  - Seed script per SPEC §10 (SVG placeholders generated into `uploads/seed/`). The seed must be **idempotent**:
+    running it twice on the same DB must not duplicate or fail (upsert by unique keys, or skip if already seeded).
+  - Create the first migration with `npx prisma migrate dev --name init` (the dev DB `pec_market` is empty, so this
+    needs no reset). If Prisma ever asks to reset the dev DB, stop and record it under "Blocked / needs human".
+  - **Accept:** `npm run db:migrate` + `npm run db:seed` run cleanly on the dev DB, and `npm run db:seed` run a second
+    time succeeds without duplicating rows; `npm run e2e` passes (its global setup applies the migration with
+    `migrate deploy`, truncates and seeds `pec_market_e2e`); unit tests cover **every** allowed transition and at least
+    10 disallowed ones (incl. wrong actor); `npm run verify` passes. Do **not** run `npm run db:reset` (human-only).
 
 - [ ] **P03 — Auth, roles, guards, storage**
   - Customer and shop-owner signup/login pages + admin login (SPEC §2). Shop signup also creates the Shop (logo upload).
