@@ -2,7 +2,7 @@ node_modules/
 .next/
 .env
 .env.local
-uploads/
+uploads/*
 !uploads/.gitkeep
 logs/
 playwright-report/
@@ -10,3 +10,5 @@ test-results/
 coverage/
 *.tsbuildinfo
 .DS_Store
+src/generated/
+next-env.d.ts

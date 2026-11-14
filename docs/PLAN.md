@@ -8,7 +8,7 @@ from the course brief so the git history maps onto the SDLC section of the repor
 
 ## Sprint 1 — Architecture & Auth
 
-- [ ] **P01 — Scaffold & tooling**
+- [x] **P01 — Scaffold & tooling**
   - The directory is not empty. Do **not** overwrite `CLAUDE.md`, `docs/`, `.claude/`, `autorun.sh`, `setup.sh`,
     `docker-compose.yml`, `.env`, `.gitignore`. Scaffold Next.js manually or in a temp dir and merge.
   - Next.js (App Router, TS strict, `src/` dir), Tailwind, ESLint, Vitest, Playwright (chromium), Prisma, `zod`, `jose`,

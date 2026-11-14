@@ -1,0 +1,9 @@
+// Models are added in P02 (SPEC §9).
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
