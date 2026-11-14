@@ -7,6 +7,8 @@ import { DisputeCard } from "@/components/disputes/DisputeCard";
 import { OrderTimeline } from "@/components/orders/OrderTimeline";
 import { OrderTracker } from "@/components/orders/OrderTracker";
 import { LiveRefresh } from "@/components/realtime/LiveRefresh";
+import { ReviewCard } from "@/components/reviews/ReviewCard";
+import { ReviewForm } from "@/components/reviews/ReviewForm";
 import { Alert } from "@/components/ui/Alert";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { Thumb } from "@/components/ui/Thumb";
@@ -139,6 +141,15 @@ export default async function CustomerOrderPage({ params }: { params: Promise<{ 
               />
             </div>
           </section>
+
+          {(order.review || order.status === "COMPLETED") && (
+            <section aria-labelledby="review-heading" className="rounded-xl border border-slate-200 bg-white p-4">
+              <h2 id="review-heading" className="mb-3 font-semibold text-slate-900">
+                {order.review ? "Your review" : `How was ${order.shop.name}?`}
+              </h2>
+              {order.review ? <ReviewCard review={order.review} /> : <ReviewForm orderId={order.id} />}
+            </section>
+          )}
 
           {order.complaints.length > 0 && (
             <section aria-labelledby="disputes-heading" className="rounded-xl border border-slate-200 bg-white p-4">

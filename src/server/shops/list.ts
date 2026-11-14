@@ -24,6 +24,16 @@ async function ratingsFor(shopIds: string[]): Promise<Map<string, ShopRating>> {
 
 const NO_RATING: ShopRating = { average: null, count: 0 };
 
+/** Whether customers can see this shop (it exists and its owner is not suspended). */
+export async function isBrowsableShop(shopId: string): Promise<boolean> {
+  return (await prisma.shop.count({ where: { id: shopId, ...BROWSABLE } })) > 0;
+}
+
+/** One shop's current average rating and review count. */
+export async function shopRating(shopId: string): Promise<ShopRating> {
+  return (await ratingsFor([shopId])).get(shopId) ?? NO_RATING;
+}
+
 /** Shops a customer can browse, open ones first, optionally filtered by a case-insensitive name search. */
 export async function listBrowsableShops({ q }: { q?: string } = {}) {
   const shops = await prisma.shop.findMany({

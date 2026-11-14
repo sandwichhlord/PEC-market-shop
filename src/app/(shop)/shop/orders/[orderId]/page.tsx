@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { DisputeCard } from "@/components/disputes/DisputeCard";
 import { ShopDisputeActions } from "@/components/disputes/ShopDisputeActions";
 import { LiveRefresh } from "@/components/realtime/LiveRefresh";
+import { ReviewCard } from "@/components/reviews/ReviewCard";
 import { KitchenActionButton } from "@/components/shop/KitchenActionButton";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { formatDateTime } from "@/lib/datetime";
@@ -23,7 +24,7 @@ export default async function ShopOrderPage({ params }: { params: Promise<{ orde
 
   return (
     <>
-      <LiveRefresh on={["order:status"]} orderId={order.id} />
+      <LiveRefresh on={["order:status", "shop:review"]} orderId={order.id} />
       <Link
         href="/shop/orders"
         className="mb-3 inline-flex min-h-11 items-center gap-1 text-sm font-medium text-slate-600 hover:text-slate-900 focus-visible:outline-2 focus-visible:outline-orange-600"
@@ -82,6 +83,15 @@ export default async function ShopOrderPage({ params }: { params: Promise<{ orde
               className="mt-4"
             />
           </section>
+
+          {order.review && (
+            <section aria-labelledby="review-heading" className="rounded-xl border border-slate-200 bg-white p-4">
+              <h2 id="review-heading" className="mb-3 font-semibold text-slate-900">
+                Customer review
+              </h2>
+              <ReviewCard review={order.review} />
+            </section>
+          )}
 
           {order.complaints.length > 0 && (
             <section aria-labelledby="disputes-heading" className="rounded-xl border border-rose-200 bg-white p-4">

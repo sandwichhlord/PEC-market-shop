@@ -93,7 +93,7 @@ from the course brief so the git history maps onto the SDLC section of the repor
   - **Accept:** integration tests for full refund, partial refund, rejection → escalation, complaint resolve, refund
     amount can't exceed paid amount, double-approve is a no-op; `npm run verify` passes.
 
-- [ ] **P10 — Reviews**
+- [x] **P10 — Reviews**
   - Review form (stars, text, up to 3 photos) only on `COMPLETED` orders, one per order; shop page shows reviews + average.
   - **Accept:** tests: review blocked before COMPLETED, second review blocked, other user's order blocked, average
     updates; `npm run verify` passes.

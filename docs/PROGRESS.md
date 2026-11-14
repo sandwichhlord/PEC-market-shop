@@ -25,6 +25,11 @@ Append one entry per phase (newest at the bottom).
   `/api/health` even reported `db: false` mid-run. On the rerun after it finished, both new `e2e/disputes.spec.ts`
   tests passed; the failures were slow login, signup and payment steps, plus a hidden streamed-page duplicate in
   `orders.spec.ts`'s card locator (now fixed with `visible: true`). `npm run verify` passes.
+- **P10 (2026-11-15):** host at 99% CPU (VS Code, a game, and another project's ledgerpay Docker stack with Kafka).
+  The full `npm run e2e` run had 19 passing; the failures were "Connection terminated due to connection timeout" from
+  Postgres and login redirects past 5 s, in specs P10 does not touch. Run alone, the new `e2e/reviews.spec.ts` passed
+  (its login wait is 20 s because the Log in request alone took over 5 s). `npm run verify` passes.
+  **Needs a human:** re-run `npm run e2e` on an idle machine.
 
 ---
 
@@ -286,3 +291,30 @@ loaded full-suite runs).
 
 **Deferred by plan:** admin disputes queue / force refund / resolve with note (P11), which reuses the escalated
 requests created here.
+
+## P10 — Reviews (2026-11-15)
+
+**Built:**
+- `POST /api/orders/[orderId]/review` (multipart: rating 1–5, comment ≤1000, up to 3 photos sniffed as images) →
+  `createReview` in `src/server/reviews/reviews.ts`: COMPLETED only, one per order (race-safe via the unique
+  `orderId`), photos stored under `uploads/reviews/` and cleaned up if the insert fails; emits `shop:review` with the
+  new average.
+- `GET /api/shops/[shopId]/reviews` (newest first, `?limit=`), plus `shopRating()` / `isBrowsableShop()` helpers.
+- Customer order page: review form (star picker, comment with counter, photo picker with previews/remove) when
+  COMPLETED and not yet reviewed; "Your review" card afterwards. Shop page: Reviews section with average
+  ("4.3 out of 5 · 3 reviews"), stars, reviewer, date, comment, photos; empty state. Shop order page shows the
+  customer's review live. New `Stars` and `ReviewCard` components.
+
+**Verified:**
+- `npm run verify` passes (530 Vitest tests; 25 new in `tests/api/reviews.test.ts`): create with photos/comment and the
+  broadcast payload; stars-only; blocked before COMPLETED (7 statuses + 2 unpaid); second review blocked; racing
+  duplicates → one row; other user's order 404; shop owner/admin 403; no session 401 / suspended 403; validation
+  (missing/0/6/fractional/text rating, long comment); >3 photos, non-image, text part refused; empty browser file part
+  ignored; average updates per review (5, 4.5, 4.3) and is unaffected by another shop's review; list order, `limit`,
+  auth and hidden-shop 404.
+- New `e2e/reviews.spec.ts` (customer orders → shop completes → form appears live → no-star submit refused → 3★ with
+  comment and photo → shop's order page shows it live → shop page average 4.5 → 4.0, newest review first) passed.
+
+**Notes:** one of three `npm run verify` runs failed an untouched P06 checkout test (a checkout transaction hit an FK
+error mid-transaction while the host was at 99% CPU); the other two runs were fully green. See Blocked for the full
+E2E run.

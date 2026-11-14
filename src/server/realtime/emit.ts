@@ -29,6 +29,16 @@ export interface ShopUpdatedEvent {
   isOpen: boolean;
 }
 
+/** A customer reviewed an order from this shop; carries the shop's new average rating. */
+export interface ShopReviewEvent {
+  type: "shop:review";
+  shopId: string;
+  orderId: string;
+  reviewId: string;
+  average: number | null;
+  count: number;
+}
+
 /** A Notification row was created for `userId` (bell count, list and toast). */
 export interface NotificationEvent {
   type: "notification:new";
@@ -44,7 +54,7 @@ export interface NotificationEvent {
   };
 }
 
-export type RealtimeEvent = OrderStatusEvent | MenuItemEvent | ShopUpdatedEvent | NotificationEvent;
+export type RealtimeEvent = OrderStatusEvent | MenuItemEvent | ShopUpdatedEvent | ShopReviewEvent | NotificationEvent;
 export type RealtimeEventName = RealtimeEvent["type"];
 export type RealtimeEventOf<N extends RealtimeEventName> = Extract<RealtimeEvent, { type: N }>;
 
@@ -61,6 +71,7 @@ export function roomsFor(event: RealtimeEvent): string[] {
     }
     case "menu:item":
     case "shop:updated":
+    case "shop:review":
       return [`menu:${event.shopId}`, `shop:${event.shopId}`];
     case "notification:new":
       return [`user:${event.userId}`];

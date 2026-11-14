@@ -69,6 +69,7 @@ export function findShopOrder(shopId: string, orderId: string) {
         orderBy: { createdAt: "asc" },
         select: { id: true, fromStatus: true, toStatus: true, note: true, createdAt: true, actor: { select: { name: true, role: true } } },
       },
+      review: { select: { id: true, rating: true, comment: true, photos: true, createdAt: true } },
       complaints: {
         orderBy: { createdAt: "desc" },
         select: {
