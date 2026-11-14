@@ -2,11 +2,11 @@
 // idempotent, so Stripe's retries and the success-page verification can race safely.
 import { HttpError } from "@/server/http";
 import { findOrderIdForSession } from "@/server/orders/checkout";
-import { markOrderPaid, markOrderPaymentFailed } from "@/server/orders/payment";
+import { markOrderPaid, markOrderPaymentFailed, syncProviderRefund } from "@/server/orders/payment";
 import { getStripeProvider } from "./index";
 import { WebhookSignatureError, type StripeProvider } from "./stripe";
 
-export type WebhookOutcome = "paid" | "failed" | "duplicate" | "ignored" | "unknown_order" | "amount_mismatch";
+export type WebhookOutcome = "paid" | "failed" | "refund_synced" | "duplicate" | "ignored" | "unknown_order" | "amount_mismatch";
 
 /**
  * Verifies and applies one Stripe event. Throws 400 BAD_SIGNATURE for an unverifiable request. Events the app cannot
@@ -25,6 +25,11 @@ export async function handleStripeWebhook(
     throw err;
   }
   if (event.kind === "ignored") return "ignored";
+  if (event.kind === "refunded") {
+    const outcome = await syncProviderRefund(event.paymentId, event.amountRefundedPaise);
+    if (outcome === "unknown_order") console.warn(`[stripe] charge.refunded for unknown payment ${event.paymentId}`);
+    return outcome;
+  }
 
   const orderId = await findOrderIdForSession(event.sessionId, event.orderId);
   if (!orderId) {

@@ -21,6 +21,10 @@ Append one entry per phase (newest at the bottom).
   than the 5 s expect timeout. Run 6 started at 91 % CPU and failed 9+ specs at login and checkout steps (a Prisma
   transaction even exceeded its 5 s limit). Every spec has passed in at least one run.
   **Needs a human:** re-run `npm run e2e` on an idle machine to confirm a fully green run.
+- **P09 (2026-11-14):** same host contention; another project's testcontainers run overlapped one E2E run, and
+  `/api/health` even reported `db: false` mid-run. On the rerun after it finished, both new `e2e/disputes.spec.ts`
+  tests passed; the failures were slow login, signup and payment steps, plus a hidden streamed-page duplicate in
+  `orders.spec.ts`'s card locator (now fixed with `visible: true`). `npm run verify` passes.
 
 ---
 
@@ -238,3 +242,47 @@ open menu (and back), and a shop menu tab following another tab. All passed (run
 fully green run on this loaded host (see Blocked).
 
 **Deferred by plan:** report events to the admin room (P11, when reports can be created), dispute response UI (P09).
+
+## P09 — Refunds & complaints (2026-11-14)
+
+**Built:**
+- **Customer:** "Request a refund" on the order page (sheet with item checkboxes or whole order, live refund amount,
+  reason) and "Report a problem" (complaint text), plus a "Refunds & complaints" list showing status, items, amount,
+  the shop's response and the resolution.
+- **API:** `POST /api/orders/[orderId]/refund-request` and `/complaints` (the order's customer only).
+- **Shop:** order page dispute cards with Approve refund (₹X) / Reject (reason) for refund requests, and Reply /
+  Mark resolved (optional note) for complaints, through `POST /api/shops/[shopId]/disputes/[complaintId]`.
+- **Service:** `src/server/disputes/` (customer.ts, respond.ts). Approve claims the request (no double refund),
+  refunds through `PaymentProvider.refund()` with an idempotency key, marks items refunded and raises
+  `refundedPaise`. The result is REFUNDED / REFUNDED when everything is refunded, otherwise the order resumes its
+  previous status with PARTIALLY_REFUNDED. Reject escalates to the admin (ESCALATED) and the order resumes. A
+  provider failure un-claims the request (502).
+- **changeStatus:** gained `inTransaction` (complaint rows commit together with the status change) and
+  `customerMessage` (partial refund / rejection / resolution texts).
+- **Stripe `charge.refunded`:** now syncs `refundedPaise` / paymentStatus for refunds made outside the app; the
+  echo of the app's own refunds is a no-op.
+- **Seed and fixtures:** paid seed orders and test fixtures carry a placeholder payment id so they can be refunded
+  with the mock provider.
+
+**Verified:** `npm run verify` passes (505 Vitest tests; 23 new in `tests/api/disputes.test.ts`):
+- full refund (provider called once with the right amount and idempotency key; items, refundedPaise, statuses,
+  complaint and customer notification checked);
+- partial refund (resumes PREPARING, PARTIALLY_REFUNDED, then the remainder → REFUNDED);
+- double approve and racing approves → one refund;
+- refund can't exceed what is still refundable (409, provider not called, request stays open);
+- provider failure → 502 and the request can be retried;
+- rejection → ESCALATED, order resumes, customer told the reason, repeat reject is a no-op, approve after reject 409;
+- partial-then-reject keeps PARTIALLY_REFUNDED;
+- complaint file → reply (notification) → resolve (order RESOLVED), repeat resolve no-op, reply to a closed
+  complaint 409;
+- request/complaint status rules, already-refunded and foreign items, validation, and wrong dispute types;
+- authorization: other customer 404, shop/admin 403, other shop 403/404;
+- `charge.refunded`: external partial then full, echo/replay no-op, pending request keeps REFUND_REQUESTED, capped
+  at the total, unknown payment acknowledged.
+
+New `e2e/disputes.spec.ts` (two contexts: partial refund approved and seen live by the customer, with only the
+remaining item offered next; reject → admin, then complaint → reply toast → resolved) passed (see Blocked for the
+loaded full-suite runs).
+
+**Deferred by plan:** admin disputes queue / force refund / resolve with note (P11), which reuses the escalated
+requests created here.

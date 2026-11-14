@@ -76,6 +76,7 @@ export function findShopOrder(shopId: string, orderId: string) {
           type: true,
           status: true,
           description: true,
+          itemIds: true,
           refundAmountPaise: true,
           shopResponse: true,
           resolution: true,

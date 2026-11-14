@@ -25,6 +25,13 @@ export interface ChangeStatusInput {
   payment?: { paymentStatus?: PaymentStatus; stripePaymentId?: string; refundedPaise?: number };
   /** Restrict the change to orders currently in one of these statuses (e.g. kitchen actions never touch disputes). */
   onlyFrom?: readonly OrderStatus[];
+  /** Replaces the customer's notification text for this change (e.g. a partial refund or a rejected request). */
+  customerMessage?: string;
+  /**
+   * Extra writes that must commit or roll back together with the status change (complaint rows, refunded items).
+   * Runs after the order row is updated; throwing aborts the whole change.
+   */
+  inTransaction?: (tx: Tx) => Promise<void>;
 }
 
 export interface ChangedOrder {
@@ -43,7 +50,7 @@ export const orderChangedError = () =>
   new HttpError(409, "ORDER_CHANGED", "This order was just updated by someone else. Refresh and try again.");
 
 /** The status an order had before it entered REFUND_REQUESTED (from its most recent such event). */
-async function statusBeforeRefundRequest(tx: Tx, orderId: string): Promise<OrderStatus | null> {
+export async function statusBeforeRefundRequest(tx: Tx, orderId: string): Promise<OrderStatus | null> {
   const event = await tx.orderEvent.findFirst({
     where: { orderId, toStatus: "REFUND_REQUESTED" },
     orderBy: { createdAt: "desc" },
@@ -57,10 +64,12 @@ interface NotificationContext {
   from: OrderStatus;
   to: OrderStatus;
   actor: StatusActor;
+  /** Overrides the customer's notification body. */
+  customerMessage?: string;
 }
 
 /** Who hears about a status change (SPEC §3/§4): the shop about new paid orders and disputes, the customer about the rest. */
-export function notificationsFor({ order, from, to, actor }: NotificationContext): Prisma.NotificationCreateManyInput[] {
+export function notificationsFor({ order, from, to, actor, customerMessage }: NotificationContext): Prisma.NotificationCreateManyInput[] {
   const customerLink = `/orders/${order.id}`;
   const shopLink = `/shop/orders/${order.id}`;
   const out: Prisma.NotificationCreateManyInput[] = [];
@@ -86,9 +95,9 @@ export function notificationsFor({ order, from, to, actor }: NotificationContext
 
   if (actor.id !== order.customerId) {
     const resumed = from === "REFUND_REQUESTED" && to !== "REFUNDED";
-    const body = resumed
-      ? `Your refund request was reviewed. The order continues: ${ORDER_STATUS_LABEL[to]}.`
-      : CUSTOMER_STATUS_MESSAGE[to];
+    const body =
+      customerMessage ??
+      (resumed ? `Your refund request was reviewed. The order continues: ${ORDER_STATUS_LABEL[to]}.` : CUSTOMER_STATUS_MESSAGE[to]);
     if (body) {
       out.push({
         userId: order.customerId,
@@ -107,7 +116,7 @@ export function notificationsFor({ order, from, to, actor }: NotificationContext
  * and 409 ORDER_CHANGED if the order's status changed between reading and writing it.
  */
 export async function changeStatus(input: ChangeStatusInput): Promise<ChangedOrder> {
-  const { orderId, to, actor, note, payment, onlyFrom } = input;
+  const { orderId, to, actor, note, payment, onlyFrom, customerMessage, inTransaction } = input;
   const outcome = await prisma.$transaction(async (tx) => {
     const order = await tx.order.findUnique({
       where: { id: orderId },
@@ -137,6 +146,7 @@ export async function changeStatus(input: ChangeStatusInput): Promise<ChangedOrd
       data: { status: to, ...payment },
     });
     if (count === 0) throw orderChangedError();
+    if (inTransaction) await inTransaction(tx);
 
     await tx.orderEvent.create({ data: { orderId, fromStatus: from, toStatus: to, actorId: actor.id, note: note ?? null } });
     const notifications = notificationsFor({
@@ -150,6 +160,7 @@ export async function changeStatus(input: ChangeStatusInput): Promise<ChangedOrd
       from,
       to,
       actor,
+      customerMessage,
     });
     const created =
       notifications.length > 0

@@ -83,6 +83,8 @@ export async function createOrderWith(opts: {
       shopId: opts.shopId,
       status,
       paymentStatus: paymentStatusFor(status),
+      // Paid orders carry a payment id, as they would after checkout (refunds need it).
+      stripePaymentId: status === "PENDING_PAYMENT" || status === "PAYMENT_FAILED" ? null : `pi_test_${uid()}`,
       totalPaise: items.reduce((sum, i) => sum + i.quantity * i.pricePaise, 0),
       ...(opts.createdAt ? { createdAt: opts.createdAt } : {}),
       items: {

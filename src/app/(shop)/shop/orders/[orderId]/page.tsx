@@ -2,6 +2,8 @@ import { ArrowLeft, Phone } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { DisputeCard } from "@/components/disputes/DisputeCard";
+import { ShopDisputeActions } from "@/components/disputes/ShopDisputeActions";
 import { LiveRefresh } from "@/components/realtime/LiveRefresh";
 import { KitchenActionButton } from "@/components/shop/KitchenActionButton";
 import { StatusBadge } from "@/components/ui/StatusBadge";
@@ -12,8 +14,6 @@ import { requirePageShop } from "@/server/shops/current";
 import { findShopOrder } from "@/server/shops/orders";
 
 export const metadata: Metadata = { title: "Order · PEC Market shop" };
-
-const COMPLAINT_STATUS_LABEL = { OPEN: "Open", ESCALATED: "Escalated to admin", RESOLVED: "Resolved", REJECTED: "Rejected" } as const;
 
 export default async function ShopOrderPage({ params }: { params: Promise<{ orderId: string }> }) {
   const { shop } = await requirePageShop();
@@ -90,15 +90,11 @@ export default async function ShopOrderPage({ params }: { params: Promise<{ orde
               </h2>
               <ul className="space-y-3">
                 {order.complaints.map((c) => (
-                  <li key={c.id} className="rounded-lg bg-slate-50 p-3 text-sm">
-                    <p className="font-medium text-slate-900">
-                      {c.type === "REFUND" ? "Refund request" : "Complaint"} · {COMPLAINT_STATUS_LABEL[c.status]}
-                      {c.refundAmountPaise !== null && <> · {formatPaise(c.refundAmountPaise)}</>}
-                    </p>
-                    <p className="mt-1 whitespace-pre-line text-slate-700">{c.description}</p>
-                    {c.shopResponse && <p className="mt-1 text-slate-600">Your response: {c.shopResponse}</p>}
-                    {c.resolution && <p className="mt-1 text-slate-600">Resolution: {c.resolution}</p>}
-                  </li>
+                  <DisputeCard key={c.id} dispute={c} items={order.items} viewer="shop">
+                    {c.status === "OPEN" && (
+                      <ShopDisputeActions shopId={shop.id} complaintId={c.id} type={c.type} refundAmountPaise={c.refundAmountPaise} />
+                    )}
+                  </DisputeCard>
                 ))}
               </ul>
             </section>

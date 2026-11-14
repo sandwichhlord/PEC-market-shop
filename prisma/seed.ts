@@ -197,6 +197,8 @@ async function main(): Promise<void> {
           status,
           totalPaise,
           paymentStatus: o.paymentStatus,
+          // Paid seed orders get a placeholder payment id so the mock provider can refund them (P09).
+          stripePaymentId: paidAt ? `seed_pi_${o.orderNumber}` : null,
           refundedPaise: o.fullyRefunded ? totalPaise : 0,
           createdAt,
           updatedAt,

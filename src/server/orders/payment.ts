@@ -151,3 +151,29 @@ export async function applyMockPayment(orderId: string, action: "pay" | "fail"):
   }
   return markOrderPaymentFailed(orderId, "Payment failed (mock).");
 }
+
+/**
+ * Keeps refund bookkeeping consistent with the provider (Stripe `charge.refunded`): `amountRefundedPaise` is the
+ * charge's running refunded total. Refunds issued by the app already raised `refundedPaise`, so their echo is a
+ * no-op; a refund made outside the app (e.g. the Stripe dashboard) raises it and sets paymentStatus to
+ * PARTIALLY_REFUNDED / REFUNDED. Order status is not changed here — only the dispute flows move it. While a refund
+ * request is pending its paymentStatus (REFUND_REQUESTED) is kept; the approval sets the final value.
+ */
+export async function syncProviderRefund(
+  paymentId: string,
+  amountRefundedPaise: number,
+): Promise<"refund_synced" | "duplicate" | "unknown_order"> {
+  const order = await prisma.order.findFirst({
+    where: { stripePaymentId: paymentId },
+    select: { id: true, status: true, totalPaise: true, refundedPaise: true },
+  });
+  if (!order) return "unknown_order";
+  const refundedPaise = Math.min(amountRefundedPaise, order.totalPaise);
+  if (refundedPaise <= order.refundedPaise) return "duplicate";
+  const paymentStatus = order.status === "REFUND_REQUESTED" ? undefined : refundedPaise >= order.totalPaise ? "REFUNDED" : "PARTIALLY_REFUNDED";
+  const { count } = await prisma.order.updateMany({
+    where: { id: order.id, refundedPaise: { lt: refundedPaise } },
+    data: { refundedPaise, ...(paymentStatus ? { paymentStatus } : {}) },
+  });
+  return count > 0 ? "refund_synced" : "duplicate";
+}

@@ -25,6 +25,8 @@ export interface StripeProviderOptions {
 export type PaymentWebhookEvent =
   | { kind: "paid"; eventType: string; sessionId: string; orderId: string | null; paymentId: string; amountPaise: number | null }
   | { kind: "failed"; eventType: string; sessionId: string; orderId: string | null }
+  /** A charge was (partly) refunded; `amountRefundedPaise` is Stripe's running total for the charge. */
+  | { kind: "refunded"; eventType: string; paymentId: string; amountRefundedPaise: number }
   | { kind: "ignored"; eventType: string };
 
 export class WebhookSignatureError extends Error {
@@ -143,6 +145,13 @@ export class StripeProvider implements PaymentProvider {
       case "checkout.session.async_payment_failed": {
         const session = event.data.object;
         return { kind: "failed", eventType: event.type, sessionId: session.id, orderId: session.metadata?.orderId ?? null };
+      }
+      case "charge.refunded": {
+        const charge = event.data.object;
+        const pi = charge.payment_intent;
+        const paymentId = typeof pi === "string" ? pi : (pi?.id ?? null);
+        if (!paymentId) return { kind: "ignored", eventType: event.type };
+        return { kind: "refunded", eventType: event.type, paymentId, amountRefundedPaise: charge.amount_refunded };
       }
       default:
         return { kind: "ignored", eventType: event.type };

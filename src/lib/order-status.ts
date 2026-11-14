@@ -1,4 +1,4 @@
-import type { OrderStatus, PaymentStatus } from "@/generated/prisma/enums";
+import type { ComplaintStatus, ComplaintType, OrderStatus, PaymentStatus } from "@/generated/prisma/enums";
 
 /** Human-readable order status names (badge colours live in components/ui/StatusBadge.tsx). */
 export const ORDER_STATUS_LABEL: Record<OrderStatus, string> = {
@@ -71,4 +71,13 @@ export const PAYMENT_STATUS_LABEL: Record<PaymentStatus, string> = {
   REFUNDED: "Refunded",
   PARTIALLY_REFUNDED: "Partially refunded",
   FAILED: "Payment failed",
+};
+
+/** Dispute labels shared by the customer and shop order pages. */
+export const COMPLAINT_TYPE_LABEL: Record<ComplaintType, string> = { REFUND: "Refund request", COMPLAINT: "Complaint" };
+export const COMPLAINT_STATUS_LABEL: Record<ComplaintStatus, string> = {
+  OPEN: "Waiting for the shop",
+  ESCALATED: "With the market admin",
+  RESOLVED: "Resolved",
+  REJECTED: "Rejected",
 };

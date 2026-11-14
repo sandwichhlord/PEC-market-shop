@@ -10,7 +10,8 @@ async function logIn(page: Page, path: string, email: string, password: string, 
   await expect(page).toHaveURL(landing);
 }
 
-const card = (page: Page, orderNumber: string) => page.getByTestId("order-card").filter({ hasText: `#${orderNumber}` });
+const card = (page: Page, orderNumber: string) =>
+  page.getByTestId("order-card").filter({ visible: true, hasText: `#${orderNumber}` });
 // `visible: true`: on a slow host, React's streamed copy of the page can linger in a hidden <div id="S:0">.
 const step = (page: Page, status: string) =>
   page.getByTestId("order-progress").filter({ visible: true }).locator(`[data-step="${status}"]`);
@@ -30,8 +31,8 @@ test("order history has Active and Past tabs", async ({ page }) => {
   await expect(page).toHaveURL(/\/orders\?tab=past$/);
   await expect(tabs.getByRole("link", { name: /Past/ })).toHaveAttribute("aria-current", "page");
   // Newest first: PEC1004 (1 day ago), PEC1002 (2 days), PEC1001 (3 days).
-  await expect(page.getByTestId("order-card")).toHaveCount(3);
-  const numbers = await page.getByTestId("order-card").allTextContents();
+  await expect(page.getByTestId("order-card").filter({ visible: true })).toHaveCount(3);
+  const numbers = await page.getByTestId("order-card").filter({ visible: true }).allTextContents();
   expect(numbers.map((t) => /#(PEC\d+)/.exec(t)?.[1])).toEqual(["PEC1004", "PEC1002", "PEC1001"]);
   await expect(card(page, "PEC1003")).toHaveCount(0);
 

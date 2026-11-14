@@ -86,7 +86,7 @@ from the course brief so the git history maps onto the SDLC section of the repor
     customer's page shows PREPARING within 3 s without reload; stock toggle reflects live on an open menu page;
     `npm run verify` and `npm run e2e` pass.
 
-- [ ] **P09 — Refunds & complaints**
+- [x] **P09 — Refunds & complaints**
   - Customer: request refund (choose items / whole order + reason) and file complaint (SPEC §6).
   - Shop: approve (provider refund, partial or full) / reject (escalates) / reply & resolve complaints.
   - Payment status updates incl. `PARTIALLY_REFUNDED`; Stripe `charge.refunded` webhook kept consistent.

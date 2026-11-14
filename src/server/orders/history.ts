@@ -62,6 +62,20 @@ const ORDER_DETAIL_SELECT = {
     orderBy: { createdAt: "asc" },
     select: { id: true, fromStatus: true, toStatus: true, note: true, createdAt: true, actor: { select: { name: true, role: true } } },
   },
+  complaints: {
+    orderBy: { createdAt: "desc" },
+    select: {
+      id: true,
+      type: true,
+      status: true,
+      description: true,
+      itemIds: true,
+      refundAmountPaise: true,
+      shopResponse: true,
+      resolution: true,
+      createdAt: true,
+    },
+  },
 } as const;
 
 /** Loads an order's detail and adds the tracking steps and estimated ready time derived from its events. */

@@ -2,6 +2,8 @@ import { ArrowLeft, MapPin } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { CustomerDisputeActions } from "@/components/disputes/CustomerDisputeActions";
+import { DisputeCard } from "@/components/disputes/DisputeCard";
 import { OrderTimeline } from "@/components/orders/OrderTimeline";
 import { OrderTracker } from "@/components/orders/OrderTracker";
 import { LiveRefresh } from "@/components/realtime/LiveRefresh";
@@ -10,6 +12,7 @@ import { StatusBadge } from "@/components/ui/StatusBadge";
 import { Thumb } from "@/components/ui/Thumb";
 import { formatDateTime } from "@/lib/datetime";
 import { formatPaise } from "@/lib/money";
+import { COMPLAINABLE_STATUSES, RESUMABLE_STATUSES } from "@/lib/order-state";
 import { PAYMENT_STATUS_LABEL } from "@/lib/order-status";
 import { orderIdSchema } from "@/lib/validation/checkout";
 import { requirePageUser } from "@/server/auth/current";
@@ -62,6 +65,8 @@ export default async function CustomerOrderPage({ params }: { params: Promise<{ 
   const order = await getCustomerOrderDetail(parsed.data.orderId, user.id);
   if (!order) notFound();
   const paid = order.status !== "PENDING_PAYMENT" && order.status !== "PAYMENT_FAILED";
+  const canRequestRefund = (RESUMABLE_STATUSES as readonly string[]).includes(order.status);
+  const canComplain = (COMPLAINABLE_STATUSES as readonly string[]).includes(order.status);
 
   return (
     <>
@@ -125,7 +130,28 @@ export default async function CustomerOrderPage({ params }: { params: Promise<{ 
                 <dd>{PAYMENT_STATUS_LABEL[order.paymentStatus]}</dd>
               </div>
             </dl>
+            <div className="mt-4">
+              <CustomerDisputeActions
+                orderId={order.id}
+                refundableItems={order.items.filter((i) => !i.refunded)}
+                canRequestRefund={canRequestRefund}
+                canComplain={canComplain}
+              />
+            </div>
           </section>
+
+          {order.complaints.length > 0 && (
+            <section aria-labelledby="disputes-heading" className="rounded-xl border border-slate-200 bg-white p-4">
+              <h2 id="disputes-heading" className="mb-3 font-semibold text-slate-900">
+                Refunds &amp; complaints
+              </h2>
+              <ul className="space-y-3">
+                {order.complaints.map((c) => (
+                  <DisputeCard key={c.id} dispute={c} items={order.items} viewer="customer" />
+                ))}
+              </ul>
+            </section>
+          )}
         </div>
 
         <div className="space-y-4">
