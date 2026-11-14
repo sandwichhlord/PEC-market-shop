@@ -3,6 +3,7 @@ import {
   EMPTY_CART,
   MAX_LINE_QUANTITY,
   addToCart,
+  applyPrices,
   cartItemCount,
   cartSubtotalPaise,
   setLineQuantity,
@@ -77,5 +78,22 @@ describe("totals", () => {
     const cart = mustAdd(mustAdd(EMPTY_CART, shopA, chai, 2), shopA, samosa, 3);
     expect(cartItemCount(cart)).toBe(5);
     expect(cartSubtotalPaise(cart)).toBe(2 * 1500 + 3 * 2000);
+  });
+});
+
+describe("applyPrices", () => {
+  it("updates only the listed lines", () => {
+    let cart = mustAdd(EMPTY_CART, shopA, chai, 2);
+    cart = mustAdd(cart, shopA, samosa, 1);
+    const updated = applyPrices(cart, [
+      { menuItemId: "chai", pricePaise: 1800 },
+      { menuItemId: "unknown", pricePaise: 1 },
+    ]);
+    expect(updated.lines.map((l) => [l.menuItemId, l.pricePaise, l.quantity])).toEqual([
+      ["chai", 1800, 2],
+      ["samosa", 2000, 1],
+    ]);
+    expect(cartSubtotalPaise(updated)).toBe(5600);
+    expect(updated.shopId).toBe("shop-a");
   });
 });

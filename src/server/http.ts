@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { ZodError, z } from "zod";
 import { OrderTransitionError } from "@/lib/order-state";
 import { clearSessionCookie } from "@/server/auth/session";
+import { PaymentConfigError } from "@/server/payments/errors";
 
 export class HttpError extends Error {
   constructor(
@@ -43,6 +44,13 @@ export function errorResponse(err: unknown): NextResponse<ErrorBody> {
     return NextResponse.json(
       { error: { code: err.httpStatus === 403 ? "FORBIDDEN_TRANSITION" : "INVALID_TRANSITION", message: err.message } },
       { status: err.httpStatus },
+    );
+  }
+  if (err instanceof PaymentConfigError) {
+    console.error("[api] payments misconfigured:", err.message);
+    return NextResponse.json(
+      { error: { code: "PAYMENTS_UNAVAILABLE", message: "Online payment is not available right now. Please try again later." } },
+      { status: 503 },
     );
   }
   console.error("[api] unhandled error", err);

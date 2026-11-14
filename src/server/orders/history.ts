@@ -16,3 +16,22 @@ export function listCustomerOrders(customerId: string) {
     },
   });
 }
+
+/** One of the customer's own orders with its items (checkout result pages), or null if it is not theirs. */
+export function getCustomerOrderSummary(orderId: string, customerId: string) {
+  return prisma.order.findFirst({
+    where: { id: orderId, customerId },
+    select: {
+      id: true,
+      orderNumber: true,
+      status: true,
+      paymentStatus: true,
+      totalPaise: true,
+      shopId: true,
+      shop: { select: { name: true } },
+      items: { select: { id: true, nameAtOrder: true, quantity: true, pricePaiseAtOrder: true }, orderBy: { id: "asc" } },
+    },
+  });
+}
+
+export type CustomerOrderSummary = NonNullable<Awaited<ReturnType<typeof getCustomerOrderSummary>>>;

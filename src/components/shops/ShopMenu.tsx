@@ -1,6 +1,7 @@
 "use client";
 
 import { ShoppingBag, UtensilsCrossed } from "lucide-react";
+import Link from "next/link";
 import { useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -90,7 +91,7 @@ export function ShopMenu({ shop, dishes }: { shop: CartShopRef; dishes: MenuDish
             aria-label="Cart summary"
             className="fixed inset-x-0 bottom-[calc(3.5rem+env(safe-area-inset-bottom))] z-20 px-4 pb-3 md:bottom-0 md:pb-4"
           >
-            <div className="mx-auto flex max-w-5xl items-center gap-3 rounded-xl bg-slate-900 px-4 py-3 text-white shadow-lg">
+            <div className="mx-auto flex max-w-5xl items-center gap-2 rounded-xl bg-slate-900 px-3 py-3 sm:gap-3 sm:px-4 text-white shadow-lg">
               <ShoppingBag aria-hidden="true" className="size-5 shrink-0 text-orange-300" />
               <div className="min-w-0 flex-1">
                 <p className="font-semibold">
@@ -105,6 +106,12 @@ export function ShopMenu({ shop, dishes }: { shop: CartShopRef; dishes: MenuDish
               >
                 Clear cart
               </button>
+              <Link
+                href="/cart"
+                className="inline-flex min-h-10 shrink-0 items-center rounded-lg bg-orange-600 px-3 text-sm font-semibold text-white hover:bg-orange-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-300"
+              >
+                View cart
+              </Link>
             </div>
           </section>
         </>

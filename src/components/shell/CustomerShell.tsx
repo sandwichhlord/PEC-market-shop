@@ -3,6 +3,7 @@
 import { Bell, ClipboardList, Store, UserRound, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { CartLink } from "@/components/cart/CartLink";
 import { BrandMark } from "@/components/ui/BrandMark";
 import { WarningBanner } from "./WarningBanner";
 
@@ -29,27 +30,30 @@ export function CustomerShell({ warning, children }: { warning: string | null; c
       <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur">
         <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4">
           <BrandMark href="/shops" />
-          <nav aria-label="Main" className="hidden md:block">
-            <ul className="flex gap-1">
-              {TABS.map(({ href, label, icon: Icon }) => {
-                const active = isActive(pathname, href);
-                return (
-                  <li key={href}>
-                    <Link
-                      href={href}
-                      aria-current={active ? "page" : undefined}
-                      className={`flex min-h-10 items-center gap-2 rounded-lg px-3 text-sm font-medium focus-visible:outline-2 focus-visible:outline-orange-600 ${
-                        active ? "bg-orange-50 text-orange-700" : "text-slate-600 hover:bg-slate-100"
-                      }`}
-                    >
-                      <Icon aria-hidden="true" className="size-4" />
-                      {label}
-                    </Link>
-                  </li>
-                );
-              })}
-            </ul>
-          </nav>
+          <div className="flex items-center gap-2">
+            <nav aria-label="Main" className="hidden md:block">
+              <ul className="flex gap-1">
+                {TABS.map(({ href, label, icon: Icon }) => {
+                  const active = isActive(pathname, href);
+                  return (
+                    <li key={href}>
+                      <Link
+                        href={href}
+                        aria-current={active ? "page" : undefined}
+                        className={`flex min-h-10 items-center gap-2 rounded-lg px-3 text-sm font-medium focus-visible:outline-2 focus-visible:outline-orange-600 ${
+                          active ? "bg-orange-50 text-orange-700" : "text-slate-600 hover:bg-slate-100"
+                        }`}
+                      >
+                        <Icon aria-hidden="true" className="size-4" />
+                        {label}
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            </nav>
+            <CartLink active={isActive(pathname, "/cart")} />
+          </div>
         </div>
       </header>
       {warning && <WarningBanner message={warning} />}

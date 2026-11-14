@@ -3,7 +3,11 @@
 Append one entry per phase (newest at the bottom).
 
 ## Blocked / needs human
-_(nothing yet)_
+- **E2E flakiness from host load (P06, 2026-11-14):** while P06 was verified, this machine sat at 85–100% CPU (other
+  desktop apps running). Postgres connection handshakes through Docker's port proxy then exceed the pg 10 s connect
+  timeout ("Connection terminated due to connection timeout") and cold-server logins exceed Playwright's 5 s expect, so
+  random specs (old and new) fail. Please re-run `npm run e2e` on an idle machine; every spec has passed in at least
+  one run. `npm run verify` passes.
 
 ---
 
@@ -124,3 +128,36 @@ cross-shop API 403).
 
 **Deferred by plan:** live push to the dashboard/menu (P08 — `emit()` is in place), dispute responses on the order
 page (P09), report customer (P11).
+
+## P06 — Cart, checkout, payment providers (2026-11-14)
+
+**Built:** `PaymentProvider` interface (`src/server/payments/`) with `StripeProvider` (Checkout Session in payment
+mode with line items, `metadata.orderId`, success/cancel URLs, 30-min expiry, idempotency key; session retrieve/expire;
+Refunds API; signature-verified webhook parsing) and `MockProvider` (internal `/pay/mock/[orderId]`, instant refunds),
+picked by `PAYMENTS_PROVIDER` (stripe / mock / auto). Checkout (`POST /api/checkout`, `src/server/orders/checkout.ts`):
+customer-only, zod-validated, re-checks shop (exists, owner not suspended, open), dishes (on menu, in stock) and prices
+inside the transaction, creates a `PENDING_PAYMENT` order with item snapshots + creation event and a `PEC`+6-char order
+number, then starts the provider checkout (provider failure → PAYMENT_FAILED + 502). `src/server/orders/payment.ts`:
+idempotent, race-safe `markOrderPaid` (→ PLACED_PAID/PAID, shop notified via changeStatus), `markOrderPaymentFailed`,
+success-page verification (`confirmCheckoutPayment`), cancel (`cancelCheckout`), mock Pay/Fail. Routes:
+`POST /api/payments/mock/[orderId]` (mock provider only, order's customer only), `POST /api/payments/stripe/webhook`
+(completed / async succeeded → paid; expired / async failed → failed; bad signature → 400; replays are no-ops).
+Pages: `/cart` (qty −/+, remove, subtotal, clear with confirm, Pay; out-of-stock/unavailable lines flagged, changed
+prices adopted), `/pay/mock/[orderId]`, `/checkout/success` (verifies with the provider, clears the cart, polls while
+pending), `/checkout/cancel` (marks failed, cart kept). Header cart button with count; "View cart" on the shop page's
+cart bar. Fixed `useCartHydrated` (could stay un-hydrated forever once another component hydrated the store first).
+
+**Verified:** `npm run verify` passes (439 Vitest tests; new: 23 checkout API tests — success + snapshots, out of stock,
+closed shop, tampered/stale price, archived/foreign/unknown dish, suspended owner, validation, auth/roles, 503 on
+misconfiguration, provider failure; 33 payment tests — `markOrderPaid` twice/concurrently is a no-op, late success,
+amount mismatch, mock pay → PLACED_PAID, mock fail → PAYMENT_FAILED, ownership/provider gating, webhook with real
+Stripe signatures (bad/missing/altered signature rejected, completed → paid, replay no-op, expired/async-failed →
+failed, unknown session / wrong amount acknowledged), success-page confirm and cancel with a fake Stripe provider;
+21 `StripeProvider` unit tests with the Stripe SDK mocked; provider selection + `MockProvider`; `applyPrices`).
+New `e2e/checkout.spec.ts` (cart → mock pay → success, cart cleared, order on the shop dashboard; fail → cart kept, not
+on the shop dashboard, retry succeeds; out-of-stock refusal flagged in the cart; 375px fit): all 4 passed together in
+one full `npm run e2e` run (27/28 — the one failure was a pre-existing spec's cold-start login). Later runs flaked under
+host load (see Blocked).
+
+**Deferred by plan:** customer order detail/timeline + Active/Past tabs (P07), live push (P08), `charge.refunded` and
+refund flows (P09).

@@ -6,7 +6,8 @@ const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };
 function createClient(): PrismaClient {
   const adapter = new PrismaPg({
     connectionString: process.env.DATABASE_URL,
-    connectionTimeoutMillis: 5_000,
+    // Generous: a loaded dev machine (parallel test workers + next build) can be slow to hand out connections.
+    connectionTimeoutMillis: 10_000,
   });
   return new PrismaClient({ adapter });
 }

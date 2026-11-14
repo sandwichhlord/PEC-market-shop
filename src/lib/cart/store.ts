@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useSyncExternalStore } from "react";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import {
   EMPTY_CART,
   addToCart,
+  applyPrices,
   setLineQuantity,
   type AddResult,
   type CartDishRef,
@@ -18,6 +19,8 @@ interface CartStore extends CartState {
   /** Empties the cart and adds the dish — used after the user confirms switching shops. */
   replaceWith: (shop: CartShopRef, dish: CartDishRef, quantity?: number) => AddResult;
   setQuantity: (menuItemId: string, quantity: number) => void;
+  /** Adopts the current server prices after a checkout was refused with PRICE_CHANGED. */
+  updatePrices: (prices: readonly { menuItemId: string; pricePaise: number }[]) => void;
   clear: () => void;
 }
 
@@ -44,6 +47,9 @@ export const useCartStore = create<CartStore>()(
       setQuantity(menuItemId, quantity) {
         set(setLineQuantity(snapshot(get()), menuItemId, quantity));
       },
+      updatePrices(prices) {
+        set(applyPrices(snapshot(get()), prices));
+      },
       clear() {
         set(EMPTY_CART);
       },
@@ -58,14 +64,18 @@ export const useCartStore = create<CartStore>()(
   ),
 );
 
-/** Loads the persisted cart once on mount; returns true once it is safe to render cart contents. */
+/**
+ * Loads the persisted cart on mount; returns true once it is safe to render cart contents. Subscribes to the store's
+ * hydration state, so it is correct no matter which component (header cart button, page) triggered hydration first.
+ */
 export function useCartHydrated(): boolean {
-  const [hydrated, setHydrated] = useState(() => useCartStore.persist.hasHydrated());
+  const hydrated = useSyncExternalStore(
+    (onChange) => useCartStore.persist.onFinishHydration(onChange),
+    () => useCartStore.persist.hasHydrated(),
+    () => false,
+  );
   useEffect(() => {
-    if (useCartStore.persist.hasHydrated()) return;
-    const unsubscribe = useCartStore.persist.onFinishHydration(() => setHydrated(true));
-    void useCartStore.persist.rehydrate();
-    return unsubscribe;
+    if (!useCartStore.persist.hasHydrated()) void useCartStore.persist.rehydrate();
   }, []);
   return hydrated;
 }

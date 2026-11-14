@@ -77,3 +77,9 @@ export function setLineQuantity(cart: CartState, menuItemId: string, quantity: n
 
 export const cartItemCount = (cart: CartState) => cart.lines.reduce((n, l) => n + l.quantity, 0);
 export const cartSubtotalPaise = (cart: CartState) => cart.lines.reduce((sum, l) => sum + l.pricePaise * l.quantity, 0);
+
+/** Updates line prices to what the server reported (checkout answered PRICE_CHANGED). Unknown ids are ignored. */
+export function applyPrices(cart: CartState, prices: readonly { menuItemId: string; pricePaise: number }[]): CartState {
+  const byId = new Map(prices.map((p) => [p.menuItemId, p.pricePaise]));
+  return { ...cart, lines: cart.lines.map((l) => (byId.has(l.menuItemId) ? { ...l, pricePaise: byId.get(l.menuItemId)! } : l)) };
+}

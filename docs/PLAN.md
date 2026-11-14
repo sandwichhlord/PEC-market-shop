@@ -57,7 +57,7 @@ from the course brief so the git history maps onto the SDLC section of the repor
 
 ## Sprint 3 — Order Flow & Payments
 
-- [ ] **P06 — Cart, checkout, payment providers**
+- [x] **P06 — Cart, checkout, payment providers**
   - Zustand cart (one shop at a time, clear-cart confirm). Checkout API: re-validate stock/price/open shop, create order
     `PENDING_PAYMENT` with item snapshots, create checkout via provider.
   - `PaymentProvider` interface, `StripeProvider`, `MockProvider` + `/pay/mock/[orderId]` page, provider selection by env.
