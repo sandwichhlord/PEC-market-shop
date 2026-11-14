@@ -8,6 +8,7 @@ import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "../src/generated/prisma/client";
 import type { NotificationType, OrderStatus } from "../src/generated/prisma/enums";
 import { transition, type TransitionActor } from "../src/lib/order-state";
+import { CUSTOMER_STATUS_MESSAGE } from "../src/lib/order-status";
 import { placeholderSvg } from "../src/lib/placeholder-svg";
 import {
   SEED_ADMIN,
@@ -32,14 +33,7 @@ const ACTOR_ROLE: Record<SeedStep["by"], TransitionActor> = {
   admin: "ADMIN",
 };
 
-const STATUS_TEXT: Partial<Record<OrderStatus, string>> = {
-  PLACED_PAID: "Payment received — your order has been sent to the shop.",
-  PREPARING: "The shop has started preparing your order.",
-  READY_FOR_PICKUP: "Your order is ready for pickup!",
-  COMPLETED: "Order completed. Enjoy your food!",
-  REFUNDED: "Your refund has been issued.",
-  PAYMENT_FAILED: "Payment failed. Your cart is saved — you can try again.",
-};
+const STATUS_TEXT = CUSTOMER_STATUS_MESSAGE;
 
 async function writeImages(): Promise<void> {
   await mkdir(SEED_IMAGE_DIR, { recursive: true });

@@ -1,5 +1,7 @@
 import { MapPin } from "lucide-react";
 import type { Metadata } from "next";
+import Link from "next/link";
+import { ShopOpenToggle } from "@/components/shop/ShopOpenToggle";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Thumb } from "@/components/ui/Thumb";
 import { requirePageUser } from "@/server/auth/current";
@@ -14,11 +16,11 @@ export default async function ShopDashboardPage() {
     return <PageHeader title="Dashboard" description="No shop is linked to this account. Contact the market admin." />;
   }
   const { shop, counts } = overview;
-  const stats: [string, number][] = [
-    ["New orders", counts.newOrders],
-    ["Preparing", counts.preparing],
-    ["Ready for pickup", counts.ready],
-    ["Dishes on menu", counts.dishes],
+  const stats: [string, number, string][] = [
+    ["New orders", counts.newOrders, "/shop/orders"],
+    ["Preparing", counts.preparing, "/shop/orders"],
+    ["Ready for pickup", counts.ready, "/shop/orders"],
+    ["Dishes on menu", counts.dishes, "/shop/menu"],
   ];
   return (
     <>
@@ -31,15 +33,18 @@ export default async function ShopDashboardPage() {
             <MapPin aria-hidden="true" className="size-3.5 shrink-0" />
             {shop.location}
           </p>
-          <p className={`mt-1 text-sm font-medium ${shop.isOpen ? "text-emerald-700" : "text-slate-500"}`}>
-            {shop.isOpen ? "Open for orders" : "Closed"}
-          </p>
+          <ShopOpenToggle shopId={shop.id} isOpen={shop.isOpen} />
         </div>
       </section>
       <dl className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        {stats.map(([label, value]) => (
-          <div key={label} className="rounded-xl border border-slate-200 bg-white p-4">
-            <dt className="text-sm text-slate-500">{label}</dt>
+        {stats.map(([label, value, href]) => (
+          <div key={label} className="relative rounded-xl border border-slate-200 bg-white p-4 hover:border-orange-300 has-focus-visible:outline-2 has-focus-visible:outline-orange-600">
+            <dt className="text-sm text-slate-500">
+              {/* The link covers the whole card. */}
+              <Link href={href} className="outline-none after:absolute after:inset-0">
+                {label}
+              </Link>
+            </dt>
             <dd className="mt-1 text-2xl font-bold text-slate-900">{value}</dd>
           </div>
         ))}

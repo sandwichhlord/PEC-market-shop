@@ -1,7 +1,7 @@
 // Fixtures for API-level integration tests. Every helper creates uniquely named rows so test files can run in
 // parallel against the same database without interfering.
 import { randomBytes } from "node:crypto";
-import type { AccountStatus, Role } from "@/generated/prisma/enums";
+import type { AccountStatus, OrderStatus, PaymentStatus, Role } from "@/generated/prisma/enums";
 import { signSession } from "@/server/auth/jwt";
 import { hashPassword } from "@/server/auth/password";
 import { prisma } from "@/server/db";
@@ -36,6 +36,64 @@ export async function createShopOwner() {
 export async function createOrder(customerId: string, shopId: string) {
   return prisma.order.create({
     data: { orderNumber: `T${uid()}`, customerId, shopId, totalPaise: 5000, status: "PLACED_PAID", paymentStatus: "PAID" },
+  });
+}
+
+export async function createDish(shopId: string, data: { name?: string; pricePaise?: number; prepTimeMinutes?: number } = {}) {
+  return prisma.menuItem.create({
+    data: {
+      shopId,
+      name: data.name ?? `Dish ${uid()}`,
+      pricePaise: data.pricePaise ?? 2500,
+      prepTimeMinutes: data.prepTimeMinutes ?? 5,
+    },
+  });
+}
+
+/** The payment status that naturally goes with an order status (for fixtures only). */
+export function paymentStatusFor(status: OrderStatus): PaymentStatus {
+  if (status === "PENDING_PAYMENT") return "PENDING";
+  if (status === "PAYMENT_FAILED") return "FAILED";
+  if (status === "REFUND_REQUESTED") return "REFUND_REQUESTED";
+  if (status === "REFUNDED") return "REFUNDED";
+  return "PAID";
+}
+
+/**
+ * An order in `status` with order items. Without `items`, one new dish (quantity 2) is created in the shop.
+ * Fixtures write the status directly: they set up state, they do not perform status changes.
+ */
+export async function createOrderWith(opts: {
+  customerId: string;
+  shopId: string;
+  status?: OrderStatus;
+  items?: { menuItemId: string; name: string; quantity: number; pricePaise: number }[];
+  createdAt?: Date;
+}) {
+  const status = opts.status ?? "PLACED_PAID";
+  let items = opts.items;
+  if (!items) {
+    const dish = await createDish(opts.shopId);
+    items = [{ menuItemId: dish.id, name: dish.name, quantity: 2, pricePaise: dish.pricePaise }];
+  }
+  return prisma.order.create({
+    data: {
+      orderNumber: `T${uid()}`,
+      customerId: opts.customerId,
+      shopId: opts.shopId,
+      status,
+      paymentStatus: paymentStatusFor(status),
+      totalPaise: items.reduce((sum, i) => sum + i.quantity * i.pricePaise, 0),
+      ...(opts.createdAt ? { createdAt: opts.createdAt } : {}),
+      items: {
+        create: items.map((i) => ({
+          menuItemId: i.menuItemId,
+          nameAtOrder: i.name,
+          quantity: i.quantity,
+          pricePaiseAtOrder: i.pricePaise,
+        })),
+      },
+    },
   });
 }
 

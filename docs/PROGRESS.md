@@ -96,3 +96,31 @@ to the report; out-of-stock cannot be added (card and sheet); quantity add + car
 one-shop cart confirm (keep / clear and add); closed shop blocks adding; unknown shop not-found).
 
 **Deferred by plan:** cart page + checkout (P06), live stock updates via Socket.IO (P08), reviews list on shop page (P10).
+
+## P05 — Shop portal: menu, stock, profile, orders dashboard (2026-11-14)
+
+**Built:** `src/server/orders/changeStatus.ts`, the single entry point for status changes: state-machine check,
+`onlyFrom` guard, conditional update (concurrent change → 409 `ORDER_CHANGED`), `OrderEvent`, `Notification`s
+(shop: new paid order / disputes; customer: every change they didn't make), then `emit()` (`src/server/realtime/emit.ts`,
+already routes to `user:`/`order:`/`shop:`/`menu:` rooms; no-op without Socket.IO). Owner-only API under
+`/api/shops/[shopId]/…`: menu list/create (multipart + photo), edit, delete (soft-delete/archive when the dish is
+in any order), one-tap stock toggle, profile PATCH (multipart with logo, or JSON for open/closed), orders list with
+Active/Completed/Disputes filters + counts, order detail, kitchen status action (PREPARING → READY_FOR_PICKUP →
+COMPLETED only, never touches disputes). Every route uses `requireShopOwner` + zod, and every query is scoped by shopId.
+Unpaid orders are invisible to shops. Pages: `/shop/orders` (filter tabs, cards with items×qty, customer, total,
+payment status, time, status badge, next-action button; new orders highlighted), `/shop/orders/[orderId]` (items,
+totals, customer, timeline, disputes read-only), `/shop/menu` (dish list, stock switch, add/edit sheet with photo,
+delete confirm), `/shop/profile` (edit + open/closed switch); dashboard gets the open switch and links; sidebar nav.
+Loading skeletons, error boundaries and empty states on each. New UI: `Switch`.
+
+**Verified:** `npm run verify` passes (346 Vitest tests; 110 new: menu CRUD + validation + archive, profile,
+orders filters/detail, every kitchen transition valid and all 27 invalid status×target combinations,
+REFUND_REQUESTED cannot be "resumed" via the kitchen endpoint, wrong role/suspended owner, concurrent double-click
+→ one 200 + one 409, ownership denial on all 9 endpoints with unchanged data, cross-shop ids → 404, direct
+`changeStatus`/`notificationsFor`/`rupeesToPaise` tests, filter and room unit tests). `npm run e2e` passes (24 tests;
+new `e2e/shop-portal.spec.ts`: kitchen flow PEC1007 placed → completed with timeline; add dish with photo →
+customer sees it → out of stock blocks customer add → edit price → delete; profile edit + close/reopen; 375px fit;
+cross-shop API 403).
+
+**Deferred by plan:** live push to the dashboard/menu (P08 — `emit()` is in place), dispute responses on the order
+page (P09), report customer (P11).

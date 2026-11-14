@@ -71,6 +71,16 @@ export async function readJson(req: Request): Promise<unknown> {
   }
 }
 
+/** The text fields `names` present in a form (absent or file-valued fields are left out, so zod sees them as missing). */
+export function formStrings<K extends string>(form: FormData, names: readonly K[]): Partial<Record<K, string>> {
+  const out: Partial<Record<K, string>> = {};
+  for (const name of names) {
+    const value = form.get(name);
+    if (typeof value === "string") out[name] = value;
+  }
+  return out;
+}
+
 /** Parses a multipart/urlencoded body, turning malformed bodies into a 400. */
 export async function readForm(req: Request): Promise<FormData> {
   try {

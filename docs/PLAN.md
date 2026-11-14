@@ -48,7 +48,7 @@ from the course brief so the git history maps onto the SDLC section of the repor
   - **Accept:** pages render seeded data at 375px and 1280px without layout breakage (Playwright screenshot test at both
     widths); out-of-stock dishes cannot be added; `npm run verify` passes.
 
-- [ ] **P05 — Shop portal: menu, stock, profile, orders dashboard (non-live)**
+- [x] **P05 — Shop portal: menu, stock, profile, orders dashboard (non-live)**
   - Menu CRUD with photo upload, soft-delete if referenced by orders, stock toggle, shop profile edit + open/closed.
   - Orders dashboard (list + detail) with filters, and status-action buttons wired to `changeStatus` (live push comes in P08).
   - Ownership enforced: a shop owner can never read or modify another shop's data (tests).
