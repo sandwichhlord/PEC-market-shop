@@ -11,7 +11,7 @@ type Ctx = { params: Promise<{ shopId: string; itemId: string }> };
 export const PATCH = withErrors(async (req: Request, ctx: Ctx) => {
   const { shopId, itemId } = menuItemParamsSchema.parse(await ctx.params);
   await requireShopOwner(req, shopId);
-  const form = await readForm(req);
+  const form = await readForm(req, { field: "photo" });
   const input = menuItemUpdateSchema.parse(formStrings(form, MENU_FIELDS));
   const photo = await optionalImageField(form, "photo");
   return NextResponse.json({ dish: await updateMenuItem(shopId, itemId, input, photo) });

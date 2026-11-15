@@ -10,7 +10,7 @@ const TEXT_FIELDS = ["name", "email", "password", "phone", "shopName", "shopDesc
 
 // Public by design: shop owners sign up here (multipart: account + shop fields + optional `logo` image).
 export const POST = withErrors(async (req: Request) => {
-  const form = await readForm(req);
+  const form = await readForm(req, { field: "logo" });
   const raw: Record<string, string | undefined> = {};
   for (const field of TEXT_FIELDS) {
     const value = form.get(field);

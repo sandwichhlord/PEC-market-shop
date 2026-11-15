@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { orderIdSchema } from "@/lib/validation/checkout";
 import { MAX_REVIEW_PHOTOS, REVIEW_FIELDS, reviewSchema } from "@/lib/validation/reviews";
 import { requireOrderAccess } from "@/server/auth/guards";
-import { HttpError, forbidden, formStrings, readForm, withErrors } from "@/server/http";
+import { FORM_OVERHEAD_BYTES, HttpError, forbidden, formStrings, readForm, withErrors } from "@/server/http";
 import { createReview } from "@/server/reviews/reviews";
 import { validateImageFile } from "@/server/storage/image";
 import { MAX_UPLOAD_BYTES } from "@/server/storage/types";
@@ -16,12 +16,12 @@ export const POST = withErrors(async (req: Request, ctx: { params: Promise<{ ord
   const { user, access } = await requireOrderAccess(req, orderId);
   if (access !== "customer") throw forbidden("Only the customer who placed the order can review it.");
 
-  // Reject oversized bodies before buffering them (3 photos plus a 64 KB multipart allowance).
-  const length = Number(req.headers.get("content-length") ?? 0);
-  if (length > MAX_REVIEW_PHOTOS * MAX_UPLOAD_BYTES + 64 * 1024) {
-    throw new HttpError(413, "IMAGE_TOO_LARGE", "Photos must be 5 MB or smaller each.", { field: "photos" });
-  }
-  const form = await readForm(req);
+  // Oversized bodies are refused while streaming in (3 photos plus the multipart allowance).
+  const form = await readForm(req, {
+    maxBytes: MAX_REVIEW_PHOTOS * MAX_UPLOAD_BYTES + FORM_OVERHEAD_BYTES,
+    field: "photos",
+    message: "Photos must be 5 MB or smaller each.",
+  });
   const input = reviewSchema.parse(formStrings(form, REVIEW_FIELDS));
 
   const parts = form.getAll("photos");

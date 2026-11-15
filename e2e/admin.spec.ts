@@ -59,7 +59,7 @@ test("a shop reports a customer; the admin suspends them from the queue and they
   // The admin sees it in the reports queue and suspends the customer.
   await logIn(admin.page, "/admin/login", "admin@pec.test", "admin123", /\/admin$/);
   await admin.page.getByRole("link", { name: "Reports" }).first().click();
-  const report = admin.page.getByTestId("report").filter({ hasText: email });
+  const report = admin.page.getByTestId("report").filter({ hasText: email, visible: true });
   await expect(report).toContainText("Shouted at the counter staff during pickup.");
   await expect(report).toContainText("Fresh Squeeze Juice Bar");
   await report.getByRole("button", { name: `Suspend ${name}` }).click();
@@ -71,7 +71,7 @@ test("a shop reports a customer; the admin suspends them from the queue and they
   // Actioned reports leave the open queue; the "Actioned" tab shows it with the suspended account.
   await expect(report).toHaveCount(0);
   await admin.page.getByRole("link", { name: "Actioned" }).click();
-  const actioned = admin.page.getByTestId("report").filter({ hasText: email });
+  const actioned = admin.page.getByTestId("report").filter({ hasText: email, visible: true });
   await expect(actioned).toHaveAttribute("data-report-status", "ACTIONED");
   await expect(actioned.locator("[data-account-status]")).toHaveAttribute("data-account-status", "SUSPENDED");
   await expect(actioned).toContainText("Second incident this week.");
@@ -83,7 +83,7 @@ test("a shop reports a customer; the admin suspends them from the queue and they
 
   // Reinstating from the users list lets them back in.
   await admin.page.goto(`/admin/users?q=${encodeURIComponent(email)}`);
-  const row = admin.page.getByTestId("admin-user").filter({ hasText: email });
+  const row = admin.page.getByTestId("admin-user").filter({ hasText: email, visible: true });
   await row.getByRole("button", { name: `Reinstate ${name}` }).click();
   await admin.page.getByRole("dialog", { name: `Reinstate ${name}` }).getByRole("button", { name: "Reinstate account" }).click();
   await expect(row.locator("[data-account-status]")).toHaveAttribute("data-account-status", "ACTIVE");
@@ -110,7 +110,7 @@ test("admin pages fit a 375px screen", async ({ browser }) => {
   }
   // The seeded escalated / resolved disputes open their detail page.
   await page.goto("/admin/disputes?status=all");
-  await page.getByTestId("admin-dispute").first().click();
+  await page.getByTestId("admin-dispute").filter({ visible: true }).first().click();
   await expect(page.getByRole("heading", { name: "Status history" })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(0);
   await context.close();

@@ -30,7 +30,7 @@ export const PATCH = withErrors(async (req: Request, ctx: Ctx) => {
   if (req.headers.get("content-type")?.includes("application/json")) {
     raw = await readJson(req);
   } else {
-    const form = await readForm(req);
+    const form = await readForm(req, { field: "logo" });
     raw = formStrings(form, PROFILE_FIELDS);
     logo = await optionalImageField(form, "logo");
   }

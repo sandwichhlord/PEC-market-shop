@@ -30,6 +30,8 @@ Append one entry per phase (newest at the bottom).
   Postgres and login redirects past 5 s, in specs P10 does not touch. Run alone, the new `e2e/reviews.spec.ts` passed
   (its login wait is 20 s because the Log in request alone took over 5 s). `npm run verify` passes.
   **Needs a human:** re-run `npm run e2e` on an idle machine.
+- **Resolved (P12, 2026-11-15):** on an idle host, the full `npm run e2e` suite (48 tests) passed twice in a row and
+  `npm run verify` passed. The earlier failures were host load.
 
 ---
 
@@ -364,3 +366,44 @@ E2E run.
 
 **Not run:** the full `npm run e2e` suite (the host is still under the load recorded in Blocked). P12 owns the full
 E2E pass, including the admin force-refund scenario.
+
+## P12 — End-to-end test suite & security pass (2026-11-15)
+
+**Built:**
+- **E2E journeys** (`e2e/journeys.spec.ts`). Each journey signs up its own customer and uses shop 4:
+  1. golden path: signup → browse → cart → mock pay → shop works the order from its dashboard (live PREPARING /
+     READY / COMPLETED on the customer's page) → review → shop page lists it → order under Past;
+  2. a failed payment keeps the cart, the retry succeeds, and history shows the PAYMENT_FAILED attempt;
+  3. whole-order refund request → shop approves → the customer sees REFUNDED live;
+  4. shop rejects → escalated → admin force-refunds from the disputes queue → customer and shop see REFUNDED live;
+  5. shop reports a customer → admin suspends → the customer is logged out on the next page, the old cookie gets
+     403 ACCOUNT_SUSPENDED from `/api/me`, and login is refused;
+  6. role-gating: signed-out users go to each portal's login with `next`; every role is bounced from the other
+     portals and from auth pages; wrong-role APIs give 401/403;
+  7. the mobile (375 px) golden path with no sideways scroll at each step, plus the bottom tabs.
+
+  Live assertions first wait for the acting side to show its own change, then give the other side 5 s.
+- **API audit** (subagent, all 37 routes): no missing guards, roles or ownership scoping. Fixed:
+  - **open redirect:** `safeNextPath` now resolves with the URL parser and requires the same origin
+    (`/\t/evil.com` used to pass);
+  - **logout:** `GET /api/auth/logout` validates its query with zod and ignores cross-site requests;
+  - **upload size:** multipart bodies are capped while streaming (`readForm` `maxBytes`), so a 413 comes back even
+    without a Content-Length;
+  - **upload roles:** `POST /api/uploads` is limited per folder by role.
+- **Login rate limit** (`src/server/auth/rate-limit.ts`, in memory). Only failed logins count: 5 per account+IP, 20
+  per account and 30 per IP in 15 min, then 429 TOO_MANY_ATTEMPTS + `Retry-After`. `server.ts` takes the client IP
+  from the socket unless `TRUST_PROXY=true`.
+- The server logs the active payment provider and warns when mock payments run in production.
+- **Robustness:**
+  - the pg pool keeps idle connections for 5 min with TCP keep-alive;
+  - E2E/Vitest DB setup retries on connection errors;
+  - the streamed-page locators that remained in `checkout`, `admin` and `shop-portal` specs now use
+    `filter({ visible: true })` (DECISIONS P08).
+
+**Verified:**
+- `npm run verify` passes: 595 Vitest tests. New: rate limiter unit tests, login rate-limit API tests (lockout,
+  other client still allowed, reset on success, IP spraying, wrong portal not counted), open-redirect cases, logout
+  cross-site, upload role matrix, streamed oversize body.
+- `npm run e2e` (48 tests) passed **twice in a row** on an idle host (48/48, then 48/48). Earlier back-to-back attempts each failed one test, on a hidden streamed duplicate (fixed with the visible filter) or on a wrong radio label in the new spec (fixed).
+- Earlier runs this session were on a host saturated by another project's Docker stack, and failed only on Postgres
+  connection timeouts. Those runs led to the timing changes above.

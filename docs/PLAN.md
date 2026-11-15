@@ -107,7 +107,7 @@ from the course brief so the git history maps onto the SDLC section of the repor
 
 ## Hardening & delivery
 
-- [ ] **P12 — End-to-end test suite & security pass**
+- [x] **P12 — End-to-end test suite & security pass**
   - Playwright E2E (mock payments, fresh `pec_market_e2e` DB): (1) golden path signup → order → pay → live status →
     complete → review; (2) payment fail then retry; (3) refund request → shop approves → customer sees REFUNDED live;
     (4) shop rejects → admin force refund; (5) shop reports customer → admin suspends → customer blocked;

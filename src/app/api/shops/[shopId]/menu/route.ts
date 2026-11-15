@@ -19,7 +19,7 @@ export const GET = withErrors(async (req: Request, ctx: Ctx) => {
 export const POST = withErrors(async (req: Request, ctx: Ctx) => {
   const { shopId } = shopIdSchema.parse(await ctx.params);
   await requireShopOwner(req, shopId);
-  const form = await readForm(req);
+  const form = await readForm(req, { field: "photo" });
   const input = menuItemCreateSchema.parse(formStrings(form, MENU_FIELDS));
   const photo = await optionalImageField(form, "photo");
   return NextResponse.json({ dish: await createMenuItem(shopId, input, photo) }, { status: 201 });

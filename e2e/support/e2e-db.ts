@@ -70,6 +70,22 @@ async function truncateAppTables(url: string): Promise<string[]> {
   }
 }
 
+/**
+ * Retries a setup step a few times. On a busy host, Postgres in Docker sometimes drops or times out a new connection
+ * (ECONNRESET / connect timeout); one retry after a pause gets through. Real errors fail after the last attempt.
+ */
+async function withRetries<T>(step: string, fn: () => Promise<T>, attempts = 4): Promise<T> {
+  for (let attempt = 1; ; attempt++) {
+    try {
+      return await fn();
+    } catch (err) {
+      if (attempt >= attempts) throw err;
+      console.warn(`[e2e] ${step} failed (attempt ${attempt}/${attempts}): ${(err as Error).message}; retrying`);
+      await new Promise((resolve) => setTimeout(resolve, 3000 * attempt));
+    }
+  }
+}
+
 function runPrisma(args: string, url: string): void {
   execSync(`npx prisma ${args}`, { stdio: "inherit", env: { ...process.env, DATABASE_URL: url } });
 }
@@ -81,9 +97,9 @@ function runPrisma(args: string, url: string): void {
 export async function prepareE2eDatabase(rawUrl: string | undefined, { seed = true }: { seed?: boolean } = {}): Promise<void> {
   const url = assertE2eDatabaseUrl(rawUrl);
   console.log(`[e2e] preparing database "${databaseNameFromUrl(url)}"`);
-  await ensureDatabaseExists(url);
-  runPrisma("migrate deploy", url);
-  const truncated = await truncateAppTables(url);
+  await withRetries("create database", () => ensureDatabaseExists(url));
+  await withRetries("migrate deploy", async () => runPrisma("migrate deploy", url));
+  const truncated = await withRetries("truncate", () => truncateAppTables(url));
   console.log(`[e2e] truncated ${truncated.length} table(s)`);
   if (seed) runPrisma("db seed", url);
 }

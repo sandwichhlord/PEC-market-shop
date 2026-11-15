@@ -8,6 +8,10 @@ function createClient(): PrismaClient {
     connectionString: process.env.DATABASE_URL,
     // Generous: a loaded dev machine (parallel test workers + next build) can be slow to hand out connections.
     connectionTimeoutMillis: 10_000,
+    // Keep pooled connections warm instead of pg's 10 s default: opening a new connection (TCP + auth, through Docker's
+    // port proxy in dev) is the slow, failure-prone step on a busy host, so short lulls shouldn't force reconnects.
+    idleTimeoutMillis: 5 * 60_000,
+    keepAlive: true,
   });
   return new PrismaClient({ adapter });
 }

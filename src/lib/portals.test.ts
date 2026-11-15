@@ -32,9 +32,25 @@ describe("loginPathFor", () => {
 describe("safeNextPath", () => {
   it("keeps same-origin paths", () => {
     expect(safeNextPath("/orders?tab=past")).toBe("/orders?tab=past");
+    expect(safeNextPath("/shop/orders/abc#top")).toBe("/shop/orders/abc#top");
+    // Dot segments are resolved but can never leave the origin.
+    expect(safeNextPath("/../../orders")).toBe("/orders");
   });
 
-  it.each([null, undefined, "", "https://evil.example", "//evil.example", "/\\evil.example", "orders"])("rejects %s", (v) => {
+  it.each([
+    null,
+    undefined,
+    "",
+    "https://evil.example",
+    "//evil.example",
+    "/\\evil.example",
+    "orders",
+    // Browsers strip tabs/newlines and read "\" as "/", so these all mean "//evil.example".
+    "/\t/evil.example",
+    "/\n/evil.example",
+    "/\r\n/evil.example",
+    "/\\/evil.example",
+  ])("rejects %j", (v) => {
     expect(safeNextPath(v)).toBeNull();
   });
 });

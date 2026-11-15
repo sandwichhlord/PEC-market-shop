@@ -120,7 +120,7 @@ test("shop edits its profile and closes / reopens", async ({ page }) => {
   await page.getByRole("button", { name: "Save profile" }).click();
   await expect(page.getByText("Shop profile saved.")).toBeVisible();
   await page.reload();
-  await expect(page.getByLabel("Location in the market")).toHaveValue("Stall 9, behind the library");
+  await expect(page.getByLabel("Location in the market").filter({ visible: true })).toHaveValue("Stall 9, behind the library");
 
   const toggle = page.getByRole("switch", { name: "Shop open for orders" });
   await expect(toggle).toHaveAttribute("aria-checked", "true");

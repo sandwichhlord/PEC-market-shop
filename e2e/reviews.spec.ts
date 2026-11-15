@@ -29,7 +29,7 @@ test("a completed order can be reviewed once; the shop page shows it with the ne
   await logIn(shop, "/shop/login", "shop1@pec.test", "shop123", /\/shop$/);
 
   await customer.goto(`/shops/${CHAI_SHOP}`);
-  await expect(customer.getByTestId("shop-average")).toContainText("4.5 out of 5 · 2 reviews");
+  await expect(customer.getByTestId("shop-average").filter({ visible: true })).toContainText("4.5 out of 5 · 2 reviews");
   await customer.getByRole("button", { name: "Add Masala Chai to cart" }).click();
   await customer.getByRole("region", { name: "Cart summary" }).getByRole("link", { name: "View cart" }).click();
   await customer.getByRole("button", { name: /^Pay / }).click();
@@ -70,8 +70,8 @@ test("a completed order can be reviewed once; the shop page shows it with the ne
 
   // Shop page: newest review first, average (5 + 4 + 3) / 3 = 4.0.
   await customer.goto(`/shops/${CHAI_SHOP}`);
-  await expect(customer.getByTestId("shop-average")).toContainText("4.0 out of 5 · 3 reviews");
-  await expect(customer.getByTestId("review").first()).toContainText("Chai was good but a bit too sweet.");
+  await expect(customer.getByTestId("shop-average").filter({ visible: true })).toContainText("4.0 out of 5 · 3 reviews");
+  await expect(customer.getByTestId("review").filter({ visible: true }).first()).toContainText("Chai was good but a bit too sweet.");
 
   await Promise.all([customerContext.close(), shopContext.close()]);
 });

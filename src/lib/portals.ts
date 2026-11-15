@@ -56,8 +56,20 @@ export function loginPathFor(pathname: string): string {
   return PORTAL_LOGIN[role ? ROLE_PORTAL[role] : "customer"];
 }
 
-/** Accepts only same-origin relative paths for post-login redirects (blocks `//evil.com` and absolute URLs). */
+/**
+ * Accepts only same-origin relative paths for post-login redirects. The path is resolved the way a browser would
+ * (which strips tabs/newlines and treats `\` like `/`), so `//evil.com`, `/\evil.com`, `/%09/evil.com` (with a real
+ * tab) and absolute URLs are all refused. Returns the normalised path + query + hash.
+ */
 export function safeNextPath(next: string | null | undefined): string | null {
-  if (!next || !next.startsWith("/") || next.startsWith("//") || next.startsWith("/\\")) return null;
-  return next;
+  if (!next || !next.startsWith("/") || next.length > 2048) return null;
+  const base = "http://same-origin.invalid";
+  let resolved: URL;
+  try {
+    resolved = new URL(next, base);
+  } catch {
+    return null;
+  }
+  if (resolved.origin !== base) return null;
+  return resolved.pathname + resolved.search + resolved.hash;
 }

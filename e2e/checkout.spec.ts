@@ -65,7 +65,7 @@ test("cart → mock pay → PLACED_PAID; the cart empties and the shop sees the 
 
   // The order is in the customer's history…
   await page.goto("/orders");
-  await expect(page.getByText(`#${orderNumber}`)).toBeVisible();
+  await expect(page.getByText(`#${orderNumber}`).filter({ visible: true })).toBeVisible();
 
   // …and on the shop's dashboard as a new paid order.
   const shopContext = await browser.newContext();

@@ -151,7 +151,16 @@ describe("logout", () => {
   });
 
   it("GET never redirects off-site", async () => {
-    const res = await logoutRedirect(apiRequest("/api/auth/logout?to=%2F%2Fevil.example%2Fx"));
-    expect(res.headers.get("location")).toBe("http://localhost:3000/login");
+    for (const to of ["%2F%2Fevil.example%2Fx", "%2F%09%2Fevil.example", "%2F%5C%2Fevil.example", "https%3A%2F%2Fevil.example"]) {
+      const res = await logoutRedirect(apiRequest(`/api/auth/logout?to=${to}&reason=hacked`));
+      expect(res.headers.get("location"), to).toBe("http://localhost:3000/login");
+    }
+  });
+
+  it("GET from another site redirects but keeps the session", async () => {
+    const req = new Request("http://localhost:3000/api/auth/logout?to=%2Flogin", { headers: { "sec-fetch-site": "cross-site" } });
+    const res = await logoutRedirect(req);
+    expect(res.status).toBe(303);
+    expect(sessionCookieFrom(res)).toBeNull();
   });
 });
