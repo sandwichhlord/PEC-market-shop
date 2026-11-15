@@ -407,3 +407,37 @@ E2E pass, including the admin force-refund scenario.
 - `npm run e2e` (48 tests) passed **twice in a row** on an idle host (48/48, then 48/48). Earlier back-to-back attempts each failed one test, on a hidden streamed duplicate (fixed with the visible filter) or on a wrong radio label in the new spec (fixed).
 - Earlier runs this session were on a host saturated by another project's Docker stack, and failed only on Postgres
   connection timeouts. Those runs led to the timing changes above.
+
+## P13 — Polish, docs, and spec audit (2026-11-15)
+
+**Built:**
+- **Spec audit.** `docs/SPEC_AUDIT.md`, written by a subagent, checks 207 SPEC requirements one by one, each with
+  its file and covering test. It found one partial: 11.4, the customer shops list was not live.
+  - Fixed with a new subscribable `shops:all` room (`{ kind: "shops", id: "all" }`, any signed-in user).
+  - `shop:updated` and `shop:review` are now also routed there, and `/shops` re-renders through `LiveRefresh`.
+  - The audit now shows 207 ✅, 0 partial, 0 missing.
+- **UI polish:**
+  - one base-layer `:focus-visible` ring for every link, button and form control that doesn't set its own;
+  - `prefers-reduced-motion` support;
+  - error boundaries for the customer, shop and admin portals and the root, plus a root 404 page.
+  - Portal-root `loading.tsx` files were tried and removed: they wrapped child pages in an extra Suspense boundary
+    (see DECISIONS).
+- **Docs:**
+  - `README.md`: setup, env vars, demo accounts, Stripe test mode + `stripe listen`, scripts, tests, layout.
+  - `docs/ARCHITECTURE.md`: system overview, Mermaid ER diagram, order state diagram, payment sequence diagrams,
+    real-time room design.
+  - `docs/SDLC.md`: Scrum mapping of sprints → phases → commits, plus the test summary.
+- **Clean-clone fix.** Following the README in a fresh clone showed that `npm install` failed: `prisma generate`
+  threw on the unset `DATABASE_URL`. `prisma.config.ts` now tolerates the missing variable, and the README creates
+  `.env` first.
+
+**Verified:**
+- `npm run verify` passes: 595 Vitest tests. New: shops-list room routing, `shops:all` subscription rules and
+  delivery; the review broadcast now expects `shops:all` too.
+- `npm run e2e` passes 48/48. New: "a shop closing and reopening shows up live on a customer's open shops list".
+- The README was followed step by step in a fresh clone in a temp directory, against the e2e database on port 3200:
+  - `cp .env.example .env`, `npm install` (also without `.env`), `npm run db:migrate`, `npm run db:seed` and
+    `npm run dev` all worked;
+  - `/api/health` returned `{"ok":true,"db":true}`, the home page 200, the demo login `student1@pec.test`
+    succeeded and `/shops` 200.
+  - The temp directory was then deleted.

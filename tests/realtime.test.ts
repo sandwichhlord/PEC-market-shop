@@ -10,6 +10,7 @@ import { prisma } from "@/server/db";
 import { changeStatus } from "@/server/orders/changeStatus";
 import { attachRealtime } from "@/server/realtime/server";
 import { setStock } from "@/server/shops/menu";
+import { updateShopProfile } from "@/server/shops/profile";
 import { createDish, createOrderWith, createShopOwner, createUser, sessionCookie } from "./helpers/fixtures";
 
 let http: HttpServer;
@@ -170,6 +171,15 @@ describe("subscriptions", () => {
     expect(await subscribe(socket, "admin")).toEqual({ ok: false, error: "BAD_REQUEST" });
     expect(await socketsIn(`menu:${shop.id}`)).toEqual([socket.id]);
   });
+
+  it("any signed-in user may watch the shops list (shops:all), nothing else of that kind", async () => {
+    const customer = await connectAs(await createUser());
+    const owner = await connectAs((await createShopOwner()).owner);
+    expect(await subscribe(customer, { kind: "shops", id: "all" })).toEqual({ ok: true });
+    expect(await subscribe(owner, { kind: "shops", id: "all" })).toEqual({ ok: true });
+    expect(await subscribe(customer, { kind: "shops", id: "some-shop" })).toEqual({ ok: false, error: "NOT_FOUND" });
+    expect((await socketsIn("shops:all")).sort()).toEqual([customer.id, owner.id].sort());
+  });
 });
 
 describe("events reach the right people", () => {
@@ -258,6 +268,20 @@ describe("events reach the right people", () => {
       name: "menu:item",
       payload: { type: "menu:item", shopId: shop.id, itemId: dish.id, inStock: false, archived: false },
     });
+    await settle();
+    expect(elsewhereGot).toEqual([]);
+  });
+
+  it("a shop opening or closing reaches the shops list watchers", async () => {
+    const { shop } = await createShopOwner();
+    const listViewer = await connectAs(await createUser());
+    expect(await subscribe(listViewer, { kind: "shops", id: "all" })).toEqual({ ok: true });
+    const listGot = record(listViewer, ["shop:updated"]);
+    const elsewhereGot = record(await connectAs(await createUser()), ["shop:updated"]);
+
+    await updateShopProfile(shop.id, { isOpen: false }, null);
+    await until(() => listGot.length === 1);
+    expect(listGot[0]).toEqual({ name: "shop:updated", payload: { type: "shop:updated", shopId: shop.id, isOpen: false } });
     await settle();
     expect(elsewhereGot).toEqual([]);
   });

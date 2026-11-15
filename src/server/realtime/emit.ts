@@ -1,5 +1,6 @@
 // Server → browser push. Business logic calls `emit()` after its database writes commit; this module decides which
-// Socket.IO rooms hear about it. Rooms: user:<id>, shop:<id>, order:<id>, admin, and the public menu:<shopId>.
+// Socket.IO rooms hear about it. Rooms: user:<id>, shop:<id>, order:<id>, admin, and the subscribable menu:<shopId>
+// and shops:all.
 // Without a running Socket.IO server (unit tests, scripts) emitting is a no-op.
 import type { NotificationType, OrderStatus, PaymentStatus } from "@/generated/prisma/enums";
 import { getIO } from "./io";
@@ -77,9 +78,11 @@ export function roomsFor(event: RealtimeEvent): string[] {
       return rooms;
     }
     case "menu:item":
+      return [`menu:${event.shopId}`, `shop:${event.shopId}`];
     case "shop:updated":
     case "shop:review":
-      return [`menu:${event.shopId}`, `shop:${event.shopId}`];
+      // Also the shops list (open/closed pill, average rating).
+      return [`menu:${event.shopId}`, `shop:${event.shopId}`, "shops:all"];
     case "report:changed":
       return ["admin"];
     case "notification:new":

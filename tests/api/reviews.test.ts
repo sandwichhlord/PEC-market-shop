@@ -75,7 +75,7 @@ describe("POST /api/orders/:orderId/review", () => {
     expect(row).toMatchObject({ customerId: customer.id, shopId: shop.id, rating: 4 });
     expect(sent).toEqual([
       {
-        rooms: [`menu:${shop.id}`, `shop:${shop.id}`],
+        rooms: [`menu:${shop.id}`, `shop:${shop.id}`, "shops:all"],
         name: "shop:review",
         payload: { type: "shop:review", shopId: shop.id, orderId: order.id, reviewId: body.review.id, average: 4, count: 1 },
       },

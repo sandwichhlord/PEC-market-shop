@@ -7,3 +7,21 @@
 body {
   @apply bg-slate-50 text-slate-900 antialiased;
 }
+
+@layer base {
+  /* One consistent keyboard focus ring for every interactive element; components can still set their own. */
+  :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+    outline: 2px solid var(--color-orange-600);
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}

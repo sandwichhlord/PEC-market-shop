@@ -115,7 +115,7 @@ from the course brief so the git history maps onto the SDLC section of the repor
   - Audit every API route for a guard + zod validation + ownership check; fix gaps. Rate-limit login (simple in-memory).
   - **Accept:** `npm run verify` and `npm run e2e` pass twice in a row (no flakes).
 
-- [ ] **P13 — Polish, docs, and spec audit**
+- [x] **P13 — Polish, docs, and spec audit**
   - Launch a **subagent** to compare `docs/SPEC.md` line by line against the implementation and write
     `docs/SPEC_AUDIT.md` (requirement → status → file). Fix every gap it finds.
   - UI polish pass at 375px and 1280px (consistent spacing, focus states, empty/error states).

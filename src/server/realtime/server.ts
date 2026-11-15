@@ -1,7 +1,7 @@
 // Socket.IO connection handling (attached in server.ts). The session JWT cookie is checked on the handshake, so
 // only signed-in, non-suspended users connect. Every socket joins its own rooms straight away — `user:<id>`, plus
 // `shop:<id>` for shop owners and `admin` for admins — and may subscribe to `order:<id>` (orders it may see) and
-// `menu:<shopId>` (any visible shop) while a page that needs them is open.
+// `menu:<shopId>` (any visible shop) and `shops:all` (the shops list) while a page that needs them is open.
 import type { Server, Socket } from "socket.io";
 import type { Role } from "@/generated/prisma/enums";
 import { SHOP_VISIBLE_STATUSES } from "@/lib/order-status";
@@ -60,7 +60,8 @@ async function handleSubscribe(socket: AppSocket, raw: unknown): Promise<Subscri
   if (!parsed.success) return { ok: false, error: "BAD_REQUEST" };
   const { kind, id } = parsed.data;
   const user = socket.data.user;
-  const allowed = kind === "order" ? await mayWatchOrder(user, id) : await mayWatchMenu(id);
+  const allowed =
+    kind === "order" ? await mayWatchOrder(user, id) : kind === "menu" ? await mayWatchMenu(id) : id === "all"; // shops list: any signed-in user
   if (!allowed) return { ok: false, error: "NOT_FOUND" };
   await socket.join(`${kind}:${id}`);
   return { ok: true };

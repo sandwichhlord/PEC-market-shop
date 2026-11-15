@@ -81,4 +81,11 @@ describe("realtime rooms", () => {
       "shop:s1",
     ]);
   });
+
+  it("sends open/closed and rating changes to the menu room, the shop and the shops list", () => {
+    expect(roomsFor({ type: "shop:updated", shopId: "s1", isOpen: false }).sort()).toEqual(["menu:s1", "shop:s1", "shops:all"]);
+    expect(
+      roomsFor({ type: "shop:review", shopId: "s1", orderId: "o1", reviewId: "r1", average: 4.5, count: 2 }).sort(),
+    ).toEqual(["menu:s1", "shop:s1", "shops:all"]);
+  });
 });

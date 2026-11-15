@@ -106,6 +106,24 @@ test("a stock toggle shows up live on a customer's open menu page", async ({ bro
   await close();
 });
 
+test("a shop closing and reopening shows up live on a customer's open shops list", async ({ browser }) => {
+  const { customer, shop, close } = await twoPortals(browser);
+  await customer.goto("/shops");
+  const card = customer.getByRole("list", { name: "Shops" }).getByRole("link", { name: new RegExp(CHAI.name) });
+  await expect(card).toContainText("Open");
+
+  await shop.goto("/shop/profile");
+  const toggle = shop.getByRole("switch", { name: "Shop open for orders" });
+  await toggle.click();
+  await expect(toggle).toHaveAttribute("aria-checked", "false");
+  await expect(card).toContainText("Closed", LIVE);
+
+  await toggle.click();
+  await expect(toggle).toHaveAttribute("aria-checked", "true");
+  await expect(card).toContainText("Open", LIVE);
+  await close();
+});
+
 test("the shop's menu page follows stock changes made in another tab", async ({ browser }) => {
   const context = await browser.newContext();
   const first = await context.newPage();

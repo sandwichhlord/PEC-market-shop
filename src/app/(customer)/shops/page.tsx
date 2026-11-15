@@ -1,10 +1,12 @@
 import { SearchX, Store } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
+import { LiveRefresh } from "@/components/realtime/LiveRefresh";
 import { ShopCard } from "@/components/shops/ShopCard";
 import { ShopSearch } from "@/components/shops/ShopSearch";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { PageHeader } from "@/components/ui/PageHeader";
+import { SHOPS_LIST_SUBSCRIPTION } from "@/lib/realtime/protocol";
 import { shopSearchSchema } from "@/lib/validation/shops";
 import { listBrowsableShops } from "@/server/shops/list";
 
@@ -20,6 +22,7 @@ export default async function ShopsPage({ searchParams }: { searchParams: Promis
   return (
     <>
       <PageHeader title="Shops" description="Everything cooking in the PEC market." />
+      <LiveRefresh on={["shop:updated", "shop:review"]} subscribe={SHOPS_LIST_SUBSCRIPTION} />
       <ShopSearch initialQuery={q ?? ""} />
       {shops.length === 0 ? (
         q ? (
