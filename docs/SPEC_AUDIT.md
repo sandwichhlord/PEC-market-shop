@@ -260,7 +260,7 @@ show the state after the fix, and the original finding is kept under "Gaps (reso
 |---|---|---|---|---|
 | 10.1 | Admin `admin@pec.test` / `admin123` | ✅ | `prisma/seed-data.ts` (`SEED_ADMIN`, `SEED_PASSWORDS`), `prisma/seed.ts` | |
 | 10.2 | 4 shops with owners `shop1@pec.test` … `shop4@pec.test` / `shop123` | ✅ | `prisma/seed-data.ts` | Tested by `tests/seed-data.test.ts` |
-| 10.3 | Shop kinds: chai & snacks stall, south-Indian counter, juice bar, fast-food counter | ✅ | `prisma/seed-data.ts` (Chai Point Stall, Dakshin Dosa Corner, Fresh Squeeze Juice Bar, Campus Bites Fast Food) | |
+| 10.3 | Shop kinds: chai & snacks stall, south-Indian counter, juice bar, fast-food counter | ✅ | `prisma/seed-data.ts` (Forks n Knives Cafe, Paratha Cafe, Combo Juice Bar, Gyoza Cafe) | |
 | 10.4 | "6–10 dishes each" | ✅ | `prisma/seed-data.ts` (7–10 per shop) | Tested by `tests/seed-data.test.ts` |
 | 10.5 | "realistic INR prices, prep times" | ✅ | `prisma/seed-data.ts` (integer paise, e.g. Coke ₹40, 1 min) | Tested by `tests/seed-data.test.ts` |
 | 10.6 | "locally generated SVG placeholder images (no network)" | ✅ | `src/lib/placeholder-svg.ts`, `prisma/seed.ts` (writes `uploads/seed/`) | DECISIONS P02. Tested by `src/lib/placeholder-svg.test.ts`, `e2e/auth.spec.ts` ("seed images are served") |

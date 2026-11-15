@@ -1,6 +1,6 @@
 import { expect, test, type Browser, type Page } from "@playwright/test";
 
-// Seeded data (prisma/seed-data.ts): admin@pec.test / admin123; shop3 = Fresh Squeeze Juice Bar (shop3@pec.test /
+// Seeded data (prisma/seed-data.ts): admin@pec.test / admin123; shop3 = Combo Juice Bar (shop3@pec.test /
 // shop123) with Mosambi Juice. The reported customer signs up fresh so suspending them cannot affect other specs.
 const JUICE_BAR = "seed_shop3";
 const uid = () => Math.random().toString(36).slice(2, 8);
@@ -61,7 +61,7 @@ test("a shop reports a customer; the admin suspends them from the queue and they
   await admin.page.getByRole("link", { name: "Reports" }).first().click();
   const report = admin.page.getByTestId("report").filter({ hasText: email, visible: true });
   await expect(report).toContainText("Shouted at the counter staff during pickup.");
-  await expect(report).toContainText("Fresh Squeeze Juice Bar");
+  await expect(report).toContainText("Combo Juice Bar");
   await report.getByRole("button", { name: `Suspend ${name}` }).click();
   const confirm = admin.page.getByRole("dialog", { name: `Suspend ${name}` });
   await confirm.getByLabel("Admin note (optional)").fill("Second incident this week.");

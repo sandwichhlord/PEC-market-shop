@@ -1,8 +1,8 @@
 import { expect, test, type Page } from "@playwright/test";
 
-// Seeded data (prisma/seed-data.ts): shop2 (Dakshin Dosa Corner) has PEC1007 waiting in PLACED_PAID;
-// shop4 is Campus Bites Fast Food. Passwords: shop123 / student123.
-const FAST_FOOD = { id: "seed_shop4", name: "Campus Bites Fast Food" };
+// Seeded data (prisma/seed-data.ts): shop2 (Paratha Cafe) has PEC1007 waiting in PLACED_PAID;
+// shop4 is Gyoza Cafe. Passwords: shop123 / student123.
+const FAST_FOOD = { id: "seed_shop4", name: "Gyoza Cafe" };
 
 async function logIn(page: Page, path: string, email: string, password: string, landing: RegExp) {
   await page.goto(path);

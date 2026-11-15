@@ -2,7 +2,7 @@ import { expect, test, type Page } from "@playwright/test";
 
 // Seeded data (prisma/seed-data.ts): shop3 is the juice bar; student2 / student123. The E2E server runs with
 // PAYMENTS_PROVIDER=mock, so checkout goes to /pay/mock/[orderId].
-const JUICE_BAR = { id: "seed_shop3", name: "Fresh Squeeze Juice Bar" };
+const JUICE_BAR = { id: "seed_shop3", name: "Combo Juice Bar" };
 
 async function logIn(page: Page, path: string, email: string, password: string, landing: RegExp) {
   await page.goto(path);

@@ -1,6 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 
-// Seeded data (prisma/seed-data.ts): student1 has PEC1003 (Fresh Squeeze Juice Bar, shop3) PREPARING, PEC1001 and
+// Seeded data (prisma/seed-data.ts): student1 has PEC1003 (Combo Juice Bar, shop3) PREPARING, PEC1001 and
 // PEC1002 COMPLETED and PEC1004 PAYMENT_FAILED. student2 has PEC1005–PEC1008. No other spec touches PEC1003.
 async function logIn(page: Page, path: string, email: string, password: string, landing: RegExp) {
   await page.goto(path);
@@ -53,7 +53,7 @@ test("order page shows the timeline and estimated ready time, and follows the sh
   const orderId = new URL(page.url()).pathname.split("/").pop()!;
 
   await expect(page.getByRole("heading", { name: "Order #PEC1003" })).toBeVisible();
-  await expect(page.getByText("Fresh Squeeze Juice Bar").first()).toBeVisible();
+  await expect(page.getByText("Combo Juice Bar").first()).toBeVisible();
   await expect(step(page, "PLACED_PAID")).toHaveAttribute("data-state", "done");
   await expect(step(page, "PREPARING")).toHaveAttribute("data-state", "current");
   await expect(step(page, "READY_FOR_PICKUP")).toHaveAttribute("data-state", "upcoming");
@@ -62,7 +62,7 @@ test("order page shows the timeline and estimated ready time, and follows the sh
   await expect(timeline.locator("li")).toHaveCount(3);
   await expect(timeline.locator("li").nth(0)).toContainText("Order created");
   await expect(timeline.locator("li").nth(2)).toContainText("Preparing");
-  await expect(timeline.locator("li").nth(2)).toContainText("Fresh Squeeze Juice Bar");
+  await expect(timeline.locator("li").nth(2)).toContainText("Combo Juice Bar");
 
   // The shop marks it ready, then completed; the customer's page reflects each change on reload (live push is P08).
   const shop = await browser.newContext();

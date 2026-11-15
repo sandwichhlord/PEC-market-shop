@@ -2,10 +2,10 @@ import { expect, test, type Locator, type Page, type TestInfo } from "@playwrigh
 import { Client } from "pg";
 import { assertE2eDatabaseUrl } from "./support/e2e-db";
 
-// Seeded data (prisma/seed-data.ts): student1 / student123; Chai Point Stall has "Kachori" out of stock.
-const CHAI_SHOP = { id: "seed_shop1", name: "Chai Point Stall" };
-const DOSA_SHOP = { id: "seed_shop2", name: "Dakshin Dosa Corner" };
-const SEEDED_SHOPS = ["Chai Point Stall", "Dakshin Dosa Corner", "Fresh Squeeze Juice Bar", "Campus Bites Fast Food"];
+// Seeded data (prisma/seed-data.ts): student1 / student123; Forks n Knives Cafe has "Kachori" out of stock.
+const CHAI_SHOP = { id: "seed_shop1", name: "Forks n Knives Cafe" };
+const DOSA_SHOP = { id: "seed_shop2", name: "Paratha Cafe" };
+const SEEDED_SHOPS = ["Forks n Knives Cafe", "Paratha Cafe", "Combo Juice Bar", "Gyoza Cafe"];
 
 const WIDTHS = [
   { name: "mobile", width: 375, height: 812 },
@@ -132,8 +132,8 @@ test("out-of-stock dishes are visible but cannot be added", async ({ page }) => 
 
 test("search filters shops by name", async ({ page }) => {
   await logInAsStudent(page);
-  await page.getByRole("searchbox", { name: "Search shops by name" }).fill("DOSA");
-  await expect(page).toHaveURL(/\/shops\?q=DOSA$/);
+  await page.getByRole("searchbox", { name: "Search shops by name" }).fill("PARATHA");
+  await expect(page).toHaveURL(/\/shops\?q=PARATHA$/);
   const shops = page.getByRole("list", { name: "Shops" });
   await expect(shops.getByRole("heading")).toHaveText([DOSA_SHOP.name]);
 

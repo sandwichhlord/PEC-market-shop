@@ -1,6 +1,6 @@
 import { expect, test, type Browser, type Page } from "@playwright/test";
 
-// Seeded data (prisma/seed-data.ts): shop2 = Dakshin Dosa Corner (shop2@pec.test / shop123): Masala Dosa ₹80,
+// Seeded data (prisma/seed-data.ts): shop2 = Paratha Cafe (shop2@pec.test / shop123): Masala Dosa ₹80,
 // Filter Coffee ₹25. student2 / student123 (student1's history counts are asserted by orders.spec.ts).
 const DOSA_CORNER = "seed_shop2";
 

@@ -1,8 +1,8 @@
 import { expect, test, type Browser, type Page } from "@playwright/test";
 
 // Two browser contexts (customer + shop) talking through Socket.IO, no reloads. Seeded data (prisma/seed-data.ts):
-// shop1 = Chai Point Stall (shop1@pec.test / shop123) with Bun Maska and Bread Pakora in stock; student1 / student123.
-const CHAI = { id: "seed_shop1", name: "Chai Point Stall" };
+// shop1 = Forks n Knives Cafe (shop1@pec.test / shop123) with Bun Maska and Bread Pakora in stock; student1 / student123.
+const CHAI = { id: "seed_shop1", name: "Forks n Knives Cafe" };
 const LIVE = { timeout: 3000 };
 
 async function logIn(page: Page, path: string, email: string, password: string, landing: RegExp) {

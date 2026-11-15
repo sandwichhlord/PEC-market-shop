@@ -48,10 +48,10 @@ Without Stripe keys the app uses the **mock payment page**. Checkout opens `/pay
 |---|---|---|
 | Customer | `student1@pec.test` | `student123` |
 | Customer | `student2@pec.test` | `student123` |
-| Shop owner, Chai Point Stall | `shop1@pec.test` | `shop123` |
-| Shop owner, Dakshin Dosa Corner | `shop2@pec.test` | `shop123` |
-| Shop owner, Fresh Squeeze Juice Bar | `shop3@pec.test` | `shop123` |
-| Shop owner, Campus Bites Fast Food | `shop4@pec.test` | `shop123` |
+| Shop owner, Forks n Knives Cafe | `shop1@pec.test` | `shop123` |
+| Shop owner, Paratha Cafe | `shop2@pec.test` | `shop123` |
+| Shop owner, Combo Juice Bar | `shop3@pec.test` | `shop123` |
+| Shop owner, Gyoza Cafe | `shop4@pec.test` | `shop123` |
 | Admin | `admin@pec.test` | `admin123` |
 
 Login pages: customers at `/login`, shops at `/shop/login`, admin at `/admin/login`. New customers sign up at

@@ -2,9 +2,9 @@ import { expect, test, type Browser, type BrowserContext, type Page } from "@pla
 
 // P12 end-to-end journeys (mock payments, fresh pec_market_e2e database). Each journey signs up its own customer so
 // it never depends on, or disturbs, the seeded accounts other specs assert on.
-// Seeded data (prisma/seed-data.ts): shop4 = Campus Bites Fast Food (shop4@pec.test / shop123): Aloo Tikki Burger ₹60,
-// French Fries ₹70. admin@pec.test / admin123. Shop 2 is Dakshin Dosa Corner (shop2@pec.test).
-const CAMPUS_BITES = { id: "seed_shop4", name: "Campus Bites Fast Food", email: "shop4@pec.test" };
+// Seeded data (prisma/seed-data.ts): shop4 = Gyoza Cafe (shop4@pec.test / shop123): Aloo Tikki Burger ₹60,
+// French Fries ₹70. admin@pec.test / admin123. Shop 2 is Paratha Cafe (shop2@pec.test).
+const CAMPUS_BITES = { id: "seed_shop4", name: "Gyoza Cafe", email: "shop4@pec.test" };
 const uid = () => Math.random().toString(36).slice(2, 8);
 
 // Journeys drive two or three signed-in contexts through checkout and beyond.
@@ -46,7 +46,7 @@ async function signUp(page: Page, prefix = "student") {
   return { name, email };
 }
 
-/** From the shops list: open Campus Bites, add the given dishes, go to the cart. */
+/** From the shops list: open Gyoza Cafe (shop 4), add the given dishes, go to the cart. */
 async function fillCart(page: Page, dishes: string[]) {
   await page.goto("/shops");
   await page.getByRole("list", { name: "Shops" }).getByRole("link", { name: new RegExp(CAMPUS_BITES.name) }).click();
