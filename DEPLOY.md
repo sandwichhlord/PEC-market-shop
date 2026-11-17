@@ -21,6 +21,7 @@ Railway's `railway.json` stops being read on 2026-12-01, so these are stored as 
 | Setting | Value |
 |---|---|
 | Builder | Dockerfile (auto-detected at the repo root) |
+| Start command | `tsx server.ts` (same as the Dockerfile `CMD`) |
 | Pre-deploy command | `node_modules/.bin/prisma migrate deploy` |
 | Healthcheck | `/api/health`, 120 s timeout |
 | Restart policy | On failure, 5 retries |
