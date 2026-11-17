@@ -19,7 +19,8 @@ FROM base AS runtime
 ENV NODE_ENV=production \
     PORT=3000 \
     UPLOAD_DIR=/data/uploads \
-    NEXT_TELEMETRY_DISABLED=1
+    NEXT_TELEMETRY_DISABLED=1 \
+    PATH=/app/node_modules/.bin:$PATH
 COPY --from=build /app /app
 RUN mkdir -p /data/uploads
 EXPOSE 3000
