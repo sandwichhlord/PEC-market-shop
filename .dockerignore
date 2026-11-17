@@ -1,0 +1,14 @@
+.git
+node_modules
+.next
+src/generated
+.env
+.env.*
+!.env.example
+uploads
+logs
+coverage
+playwright-report
+test-results
+*.tsbuildinfo
+.claude

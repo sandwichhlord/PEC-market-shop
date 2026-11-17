@@ -1,7 +1,13 @@
 // Static seed data per SPEC §10. Every row has a fixed id/unique key so the seed can upsert idempotently.
 import type { OrderStatus, PaymentStatus, ReportReason } from "../src/generated/prisma/enums";
 
-export const SEED_PASSWORDS = { admin: "admin123", shop: "shop123", customer: "student123" } as const;
+// Deployments set SEED_*_PASSWORD so the public demo passwords below never reach a live database. Unset (local dev,
+// tests) the documented defaults apply. Note: the seed only sets a password when it first creates the user.
+export const SEED_PASSWORDS = {
+  admin: process.env.SEED_ADMIN_PASSWORD || "admin123",
+  shop: process.env.SEED_SHOP_PASSWORD || "shop123",
+  customer: process.env.SEED_CUSTOMER_PASSWORD || "student123",
+};
 
 export interface SeedDish {
   key: string;
